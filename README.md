@@ -1,6 +1,6 @@
 # Internal Developer Portal
 
-A new multi-tenant internal tooling SaaS starter focused on:
+A new multi-tenant internal Developer tooling SaaS starter focused on:
 
 - service catalog
 - ownership maps
