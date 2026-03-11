@@ -4,7 +4,7 @@ export function DocsList({ documents }: { documents: DocumentSummary[] }) {
   return (
     <section className="doc-grid">
       {documents.map((document) => (
-        <article key={document.id} className="doc-card stack">
+        <article key={document.id} id={`doc-${document.slug}`} className="doc-card stack" style={{ scrollMarginTop: 112 }}>
           <div className="row" style={{ justifyContent: "flex-start" }}>
             <span className="pill">{document.type}</span>
             <span className="tiny muted">{document.updatedAt}</span>

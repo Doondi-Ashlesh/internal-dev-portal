@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
@@ -8,6 +8,8 @@ async function main() {
   await prisma.apiLink.deleteMany();
   await prisma.serviceEnvironment.deleteMany();
   await prisma.activityEvent.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.webhookDelivery.deleteMany();
   await prisma.document.deleteMany();
   await prisma.serviceRepository.deleteMany();
   await prisma.repository.deleteMany();
@@ -33,7 +35,7 @@ async function main() {
     prisma.user.create({ data: { name: "Jordan Lee", email: "jordan@foundry.dev", githubId: "gh_jordan" } })
   ]);
 
-  await Promise.all([
+  const members = await Promise.all([
     prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: users[0].id, role: "owner" } }),
     prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: users[1].id, role: "admin" } }),
     prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: users[2].id, role: "editor" } }),
@@ -186,7 +188,19 @@ async function main() {
     prisma.activityEvent.create({ data: { workspaceId: workspace.id, serviceId: worker.id, actorUserId: users[3].id, source: "system", type: "service.imported", title: "New service imported", body: "event-worker was created from repository metadata and CODEOWNERS.", metadataJson: JSON.stringify({ provider: "github" }), occurredAt: new Date(now - 2 * 24 * 60 * 60 * 1000) } })
   ]);
 
-  console.log("Database seeded for Foundry Labs portal.");
+  await Promise.all([
+    prisma.auditLog.create({ data: { workspaceId: workspace.id, actorUserId: users[0].id, entityType: "repository", action: "github.repositories.synced", metadataJson: JSON.stringify({ summary: "Synced 6 repositories from GitHub.", count: 6 }) } }),
+    prisma.auditLog.create({ data: { workspaceId: workspace.id, actorUserId: users[1].id, entityType: "document", action: "document.updated", metadataJson: JSON.stringify({ summary: "Updated Edge Gateway Runbook.", title: "Edge Gateway Runbook" }) } }),
+    prisma.auditLog.create({ data: { workspaceId: workspace.id, actorUserId: users[0].id, entityType: "workspaceMember", action: "workspace.member.role.updated", metadataJson: JSON.stringify({ summary: "Updated Mina Lopez to editor.", role: "editor" }) } })
+  ]);
+
+  await Promise.all([
+    prisma.webhookDelivery.create({ data: { workspaceId: workspace.id, provider: "github", deliveryId: "demo-delivery-1", eventName: "push", repositoryFullName: "foundry-labs/billing-api", signatureValid: true, status: "processed", payloadJson: JSON.stringify({ ref: "refs/heads/main" }), processedAt: new Date(now - 70 * 60 * 1000) } }),
+    prisma.webhookDelivery.create({ data: { workspaceId: workspace.id, provider: "github", deliveryId: "demo-delivery-2", eventName: "workflow_run", repositoryFullName: "foundry-labs/docs-web", signatureValid: true, status: "processed", payloadJson: JSON.stringify({ action: "completed" }), processedAt: new Date(now - 5 * 60 * 60 * 1000) } }),
+    prisma.webhookDelivery.create({ data: { workspaceId: workspace.id, provider: "github", deliveryId: "demo-delivery-3", eventName: "release", repositoryFullName: "foundry-labs/platform-infra", signatureValid: false, status: "failed", payloadJson: JSON.stringify({ action: "published" }), errorMessage: "Invalid GitHub webhook signature.", processedAt: new Date(now - 30 * 60 * 1000) } })
+  ]);
+
+  console.log(`Database seeded for ${workspace.name}. Workspace members: ${members.length}.`);
 }
 
 main()

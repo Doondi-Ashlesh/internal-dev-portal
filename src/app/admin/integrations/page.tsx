@@ -1,31 +1,37 @@
-import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { GithubRepoManagement } from "@/components/admin/github-repo-management";
-import { getWorkspaceRepositories, getWorkspaceSnapshot } from "@/server/workspace";
-
-const integrationCards = [
-  {
-    title: "GitHub OAuth",
-    status: "Live",
-    description: "Use GitHub for login, repository import, and CODEOWNERS-driven ownership mapping."
-  },
-  {
-    title: "Webhook ingestion",
-    status: "Next",
-    description: "Receive push, release, and workflow events and normalize them into the activity feed."
-  },
-  {
-    title: "Health checks",
-    status: "Planned",
-    description: "Attach manual, HTTP, or observability-backed sources to each service."
-  }
-];
+import { env, isGithubWebhookConfigured } from "@/lib/env";
+import { canManageWorkspace } from "@/lib/permissions";
+import { getPageWorkspaceContext } from "@/server/access";
+import { getWorkspaceRepositories, getWorkspaceSnapshot, getWorkspaceWebhookDeliveries } from "@/server/workspace";
 
 export default async function IntegrationsPage() {
-  const session = await auth();
+  const access = await getPageWorkspaceContext();
   const snapshot = await getWorkspaceSnapshot();
   const repositories = await getWorkspaceRepositories();
-  const hasGithubAccess = Boolean(session?.user?.accessToken);
+  const deliveries = await getWorkspaceWebhookDeliveries();
+  const canManage = canManageWorkspace(access.role);
+  const hasGithubAccess = Boolean(access.accessToken);
+  const webhookConfigured = isGithubWebhookConfigured();
+  const webhookEndpoint = `${env.appBaseUrl}/api/webhooks/github`;
+
+  const integrationCards = [
+    {
+      title: "GitHub OAuth",
+      status: hasGithubAccess ? "Live" : "Needs sign-in",
+      description: "Use GitHub for login, repository import, and workspace-scoped repository sync."
+    },
+    {
+      title: "Webhook ingestion",
+      status: webhookConfigured ? "Live" : "Needs secret",
+      description: "Signed GitHub push, release, and workflow events are verified, stored, and normalized into activity."
+    },
+    {
+      title: "RBAC + audit",
+      status: "Live",
+      description: "Workspace mutations are permission-checked and written to an audit trail."
+    }
+  ];
 
   return (
     <AppShell workspaceName={snapshot.workspace.name} currentPath="/admin/integrations">
@@ -34,8 +40,8 @@ export default async function IntegrationsPage() {
           <div className="section-label">Admin</div>
           <h1 className="page-title" style={{ fontSize: "2.5rem" }}>Integrations</h1>
           <p className="muted" style={{ maxWidth: 720 }}>
-            This area is where GitHub app setup, webhook verification, CI provider connections, and service health
-            providers will live as we wire the backend.
+            This area now covers OAuth, signed webhook ingestion, repository sync, and the operational plumbing that turns
+            the portal into a living engineering surface.
           </p>
         </div>
         <div className="doc-grid">
@@ -46,6 +52,13 @@ export default async function IntegrationsPage() {
             </article>
           ))}
         </div>
+        <article className="info-card stack">
+          <strong>GitHub webhook endpoint</strong>
+          <code>{webhookEndpoint}</code>
+          <span className="muted tiny">
+            Configure this as the GitHub webhook URL and set `GITHUB_WEBHOOK_SECRET` so deliveries can be verified.
+          </span>
+        </article>
       </section>
 
       <section className="card card-pad stack-lg">
@@ -53,16 +66,48 @@ export default async function IntegrationsPage() {
           <div className="section-label">GitHub Sync</div>
           <h2 className="section-title" style={{ marginTop: 8 }}>Import and link repositories</h2>
           <p className="muted" style={{ maxWidth: 720 }}>
-            Pull repositories from GitHub, keep them in the local catalog, and map them to internal services so later webhook events
-            can land in the right activity feeds.
+            Pull repositories from GitHub, keep them in the local catalog, and map them to internal services so webhook events
+            land in the right activity feeds.
           </p>
         </div>
         <GithubRepoManagement
           workspaceId={snapshot.workspace.id}
           services={snapshot.services}
           repositories={repositories}
-          canImport={hasGithubAccess}
+          canImport={hasGithubAccess && canManage}
+          canManage={canManage}
         />
+      </section>
+
+      <section className="card card-pad stack-lg">
+        <div>
+          <div className="section-label">Recent Deliveries</div>
+          <h2 className="section-title" style={{ marginTop: 8 }}>Webhook processing log</h2>
+        </div>
+        {deliveries.length ? (
+          <div className="stack">
+            {deliveries.map((delivery) => (
+              <article key={delivery.id} className="info-card stack">
+                <div className="row">
+                  <strong>{delivery.eventName}</strong>
+                  <span className="pill">{delivery.status}</span>
+                </div>
+                <span className="muted tiny">{delivery.repositoryFullName ?? "Unmapped repository"}</span>
+                <span className="muted tiny">Delivery: {delivery.deliveryId}</span>
+                <span className="muted tiny">Received {delivery.createdAt}{delivery.processedAt ? ` | processed ${delivery.processedAt}` : ""}</span>
+                <span className="muted tiny">Signature valid: {String(delivery.signatureValid)}</span>
+                {delivery.errorMessage ? <span className="muted tiny">{delivery.errorMessage}</span> : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article className="info-card stack">
+            <strong>No webhook deliveries yet</strong>
+            <span className="muted tiny">
+              Send a signed GitHub webhook to this environment and recent deliveries will appear here.
+            </span>
+          </article>
+        )}
       </section>
     </AppShell>
   );

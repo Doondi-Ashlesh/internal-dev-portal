@@ -4,9 +4,11 @@ import { MetricsGrid } from "@/components/metrics-grid";
 import { ServiceCards } from "@/components/service-cards";
 import { AppShell } from "@/components/app-shell";
 import { WorkspaceOverview } from "@/components/workspace-overview";
+import { getPageWorkspaceContext } from "@/server/access";
 import { getWorkspaceSnapshot } from "@/server/workspace";
 
 export default async function DashboardPage() {
+  await getPageWorkspaceContext();
   const snapshot = await getWorkspaceSnapshot();
 
   return (

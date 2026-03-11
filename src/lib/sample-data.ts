@@ -1,4 +1,4 @@
-﻿import { WorkspaceSnapshot } from "@/lib/types";
+import { WorkspaceSnapshot } from "@/lib/types";
 
 export const sampleWorkspace: WorkspaceSnapshot = {
   workspace: {
@@ -7,6 +7,12 @@ export const sampleWorkspace: WorkspaceSnapshot = {
     slug: "foundry-labs",
     memberCount: 18
   },
+  members: [
+    { id: "member_anaya", userId: "user_anaya", name: "Anaya Patel", email: "anaya@foundry.dev", role: "owner" },
+    { id: "member_marco", userId: "user_marco", name: "Marco Sims", email: "marco@foundry.dev", role: "admin" },
+    { id: "member_mina", userId: "user_mina", name: "Mina Lopez", email: "mina@foundry.dev", role: "editor" },
+    { id: "member_jordan", userId: "user_jordan", name: "Jordan Lee", email: "jordan@foundry.dev", role: "editor" }
+  ],
   teams: [
     { id: "team_platform", name: "Platform", slug: "platform", memberCount: 5, description: "Infrastructure and developer systems" },
     { id: "team_growth", name: "Growth", slug: "growth", memberCount: 4, description: "Docs and acquisition systems" },

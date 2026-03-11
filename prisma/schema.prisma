@@ -1,4 +1,4 @@
-﻿generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -8,18 +8,20 @@ datasource db {
 }
 
 model Workspace {
-  id           String            @id @default(cuid())
-  name         String
-  slug         String            @unique
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  members      WorkspaceMember[]
-  teams        Team[]
-  services     Service[]
-  documents    Document[]
-  repositories Repository[]
-  environments Environment[]
-  events       ActivityEvent[]
+  id                String            @id @default(cuid())
+  name              String
+  slug              String            @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  members           WorkspaceMember[]
+  teams             Team[]
+  services          Service[]
+  documents         Document[]
+  repositories      Repository[]
+  environments      Environment[]
+  events            ActivityEvent[]
+  auditLogs         AuditLog[]
+  webhookDeliveries WebhookDelivery[]
 }
 
 model User {
@@ -34,6 +36,7 @@ model User {
   ownedServices ServiceOwner[]
   authoredDocs  Document[]        @relation("DocumentAuthor")
   events        ActivityEvent[]   @relation("ActivityActor")
+  auditLogs     AuditLog[]        @relation("AuditActor")
 }
 
 model WorkspaceMember {
@@ -167,19 +170,19 @@ model ServiceEnvironment {
 
 model Document {
   id              String       @id @default(cuid())
-  workspaceId      String
-  serviceId        String?
-  authorId         String?
-  type             DocumentType
-  title            String
-  slug             String
-  contentMarkdown  String
-  published        Boolean      @default(true)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  workspace        Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  service          Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  author           User?        @relation("DocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  workspaceId     String
+  serviceId       String?
+  authorId        String?
+  type            DocumentType
+  title           String
+  slug            String
+  contentMarkdown String
+  published       Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  service         Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  author          User?        @relation("DocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   @@unique([workspaceId, serviceId, slug])
 }
@@ -196,7 +199,7 @@ model ApiLink {
 
 model HealthSource {
   id         String         @id @default(cuid())
-  serviceId   String
+  serviceId  String
   provider   HealthProvider
   label      String
   configJson String
@@ -216,20 +219,51 @@ model HealthCheck {
 }
 
 model ActivityEvent {
-  id          String      @id @default(cuid())
-  workspaceId  String
-  serviceId    String?
-  actorUserId  String?
-  source      EventSource
-  type        String
-  title       String
-  body        String?
+  id           String      @id @default(cuid())
+  workspaceId   String
+  serviceId     String?
+  actorUserId   String?
+  source       EventSource
+  type         String
+  title        String
+  body         String?
   metadataJson String
-  occurredAt  DateTime    @default(now())
-  createdAt   DateTime    @default(now())
-  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  service     Service?    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  actor       User?       @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  occurredAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  service      Service?    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  actor        User?       @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  actorUserId  String?
+  entityType   String
+  entityId     String?
+  action       String
+  metadataJson String
+  createdAt    DateTime  @default(now())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor        User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model WebhookDelivery {
+  id                 String                @id @default(cuid())
+  workspaceId        String?
+  provider           WebhookProvider
+  deliveryId         String
+  eventName          String
+  repositoryFullName String?
+  signatureValid     Boolean               @default(false)
+  status             WebhookDeliveryStatus @default(pending)
+  payloadJson        String
+  errorMessage       String?
+  processedAt        DateTime?
+  createdAt          DateTime              @default(now())
+  workspace          Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, deliveryId])
 }
 
 enum Role {
@@ -311,4 +345,15 @@ enum EventSource {
   github
   ci
   manual
+}
+
+enum WebhookProvider {
+  github
+}
+
+enum WebhookDeliveryStatus {
+  pending
+  processed
+  ignored
+  failed
 }

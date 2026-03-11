@@ -1,8 +1,10 @@
 import { ActivityFeed } from "@/components/activity-feed";
 import { AppShell } from "@/components/app-shell";
+import { getPageWorkspaceContext } from "@/server/access";
 import { getWorkspaceSnapshot } from "@/server/workspace";
 
 export default async function ActivityPage() {
+  await getPageWorkspaceContext();
   const snapshot = await getWorkspaceSnapshot();
 
   return (

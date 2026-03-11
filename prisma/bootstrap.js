@@ -1,11 +1,5 @@
-﻿const fs = require("fs");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
-
-const databasePath = path.join(__dirname, "local.db");
-if (fs.existsSync(databasePath)) {
-  fs.rmSync(databasePath, { force: true });
-}
 
 const prisma = new PrismaClient();
 
@@ -192,7 +186,38 @@ const statements = [
     CONSTRAINT "ActivityEvent_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ActivityEvent_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ActivityEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
-  );`
+  );`,
+  `CREATE TABLE IF NOT EXISTS "AuditLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "workspaceId" TEXT NOT NULL,
+    "actorUserId" TEXT,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT,
+    "action" TEXT NOT NULL,
+    "metadataJson" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AuditLog_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AuditLog_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
+  );`,
+  `CREATE TABLE IF NOT EXISTS "WebhookDelivery" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "workspaceId" TEXT,
+    "provider" TEXT NOT NULL,
+    "deliveryId" TEXT NOT NULL,
+    "eventName" TEXT NOT NULL,
+    "repositoryFullName" TEXT,
+    "signatureValid" BOOLEAN NOT NULL DEFAULT false,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "payloadJson" TEXT NOT NULL,
+    "errorMessage" TEXT,
+    "processedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WebhookDelivery_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE SET NULL ON UPDATE CASCADE
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "WebhookDelivery_provider_deliveryId_key" ON "WebhookDelivery"("provider", "deliveryId");`,
+  `CREATE INDEX IF NOT EXISTS "ActivityEvent_workspaceId_occurredAt_idx" ON "ActivityEvent"("workspaceId", "occurredAt");`,
+  `CREATE INDEX IF NOT EXISTS "AuditLog_workspaceId_createdAt_idx" ON "AuditLog"("workspaceId", "createdAt");`,
+  `CREATE INDEX IF NOT EXISTS "WebhookDelivery_workspaceId_createdAt_idx" ON "WebhookDelivery"("workspaceId", "createdAt");`
 ];
 
 async function main() {
@@ -200,7 +225,8 @@ async function main() {
     await prisma.$executeRawUnsafe(statement);
   }
 
-  console.log("SQLite schema bootstrapped.");
+  const databaseFile = path.join(__dirname, "local.db");
+  console.log(`SQLite schema bootstrapped at ${databaseFile}.`);
 }
 
 main()

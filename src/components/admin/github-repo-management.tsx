@@ -1,4 +1,4 @@
-﻿import { GithubRepositorySummary, RepositoryRelationship, ServiceSummary } from "@/lib/types";
+import { GithubRepositorySummary, RepositoryRelationship, ServiceSummary } from "@/lib/types";
 import { deleteRepositoryLink, importGithubRepositoriesAction, saveRepositoryLink } from "@/server/actions";
 
 const relationshipOptions: RepositoryRelationship[] = ["primary", "worker", "docs", "infra", "library", "other"];
@@ -7,12 +7,14 @@ export function GithubRepoManagement({
   workspaceId,
   services,
   repositories,
-  canImport
+  canImport,
+  canManage
 }: {
   workspaceId: string;
   services: ServiceSummary[];
   repositories: GithubRepositorySummary[];
   canImport: boolean;
+  canManage: boolean;
 }) {
   return (
     <div className="stack-lg">
@@ -24,7 +26,11 @@ export function GithubRepoManagement({
         <span className="muted tiny">
           Sync the latest repositories from the signed-in GitHub account, then link each repository to one or more services.
         </span>
-        {canImport ? (
+        {!canManage ? (
+          <span className="badge" data-tone="warning">
+            Repository sync is read-only for your current role
+          </span>
+        ) : canImport ? (
           <form action={importGithubRepositoriesAction}>
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <button className="button-link" type="submit">Import repositories from GitHub</button>
@@ -61,11 +67,13 @@ export function GithubRepoManagement({
                       <strong>{link.serviceName}</strong>
                       <span className="pill">{link.relationshipType}</span>
                     </div>
-                    <form action={deleteRepositoryLink}>
-                      <input type="hidden" name="repositoryId" value={repository.id} />
-                      <input type="hidden" name="serviceId" value={link.serviceId} />
-                      <button className="button-link secondary" type="submit">Remove link</button>
-                    </form>
+                    {canManage ? (
+                      <form action={deleteRepositoryLink}>
+                        <input type="hidden" name="repositoryId" value={repository.id} />
+                        <input type="hidden" name="serviceId" value={link.serviceId} />
+                        <button className="button-link secondary" type="submit">Remove link</button>
+                      </form>
+                    ) : null}
                   </div>
                 ))
               ) : (
@@ -73,29 +81,31 @@ export function GithubRepoManagement({
               )}
             </div>
 
-            <form action={saveRepositoryLink} className="stack">
-              <input type="hidden" name="repositoryId" value={repository.id} />
-              <div className="row">
-                <select name="serviceId" defaultValue="">
-                  <option value="">Select a service</option>
-                  {services.map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.name}
-                    </option>
-                  ))}
-                </select>
-                <select name="relationshipType" defaultValue="primary">
-                  {relationshipOptions.map((relationship) => (
-                    <option key={relationship} value={relationship}>
-                      {relationship}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="row" style={{ justifyContent: "flex-start" }}>
-                <button className="button-link" type="submit">Add or update link</button>
-              </div>
-            </form>
+            {canManage ? (
+              <form action={saveRepositoryLink} className="stack">
+                <input type="hidden" name="repositoryId" value={repository.id} />
+                <div className="row">
+                  <select name="serviceId" defaultValue="">
+                    <option value="">Select a service</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select name="relationshipType" defaultValue="primary">
+                    {relationshipOptions.map((relationship) => (
+                      <option key={relationship} value={relationship}>
+                        {relationship}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="row" style={{ justifyContent: "flex-start" }}>
+                  <button className="button-link" type="submit">Add or update link</button>
+                </div>
+              </form>
+            ) : null}
           </article>
         ))
       ) : (

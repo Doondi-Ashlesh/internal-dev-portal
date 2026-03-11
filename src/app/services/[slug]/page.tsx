@@ -1,9 +1,11 @@
 import { AppShell } from "@/components/app-shell";
 import { ServiceDetail } from "@/components/service-detail";
+import { getPageWorkspaceContext } from "@/server/access";
 import { getServiceContext, getWorkspaceSnapshot } from "@/server/workspace";
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  await getPageWorkspaceContext();
   const snapshot = await getWorkspaceSnapshot();
   const context = await getServiceContext(slug);
 

@@ -9,3 +9,6 @@ prisma/dev.db
 prisma/dev.db-journal
 prisma/local.db
 prisma/local.db-journal
+.dev-stdout.log
+.dev-stderr.log
+tsconfig.tsbuildinfo

@@ -1,15 +1,28 @@
-import { createService, deleteService, updateService } from "@/server/actions";
 import { ServiceSummary, TeamSummary } from "@/lib/types";
+import { createService, deleteService, updateService } from "@/server/actions";
 
 export function ServiceManagement({
   workspaceId,
   teams,
-  services
+  services,
+  canManage
 }: {
   workspaceId: string;
   teams: TeamSummary[];
   services: ServiceSummary[];
+  canManage: boolean;
 }) {
+  if (!canManage) {
+    return (
+      <article className="info-card stack">
+        <strong>Catalog editing is restricted</strong>
+        <span className="muted tiny">
+          Your current role can browse services, but only editors and above can change the service catalog.
+        </span>
+      </article>
+    );
+  }
+
   return (
     <div className="stack-lg">
       <article className="info-card stack">
@@ -34,6 +47,7 @@ export function ServiceManagement({
               <option value="experimental">experimental</option>
               <option value="active">active</option>
               <option value="deprecated">deprecated</option>
+              <option value="retired">retired</option>
             </select>
           </div>
           <input name="tags" placeholder="comma,separated,tags" />
@@ -68,6 +82,7 @@ export function ServiceManagement({
                 <option value="experimental">experimental</option>
                 <option value="active">active</option>
                 <option value="deprecated">deprecated</option>
+                <option value="retired">retired</option>
               </select>
             </div>
             <input name="tags" defaultValue={service.tags.join(", ")} />

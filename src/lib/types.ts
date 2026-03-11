@@ -1,12 +1,23 @@
-﻿export type WorkspaceRole = "owner" | "admin" | "editor" | "viewer";
+export type WorkspaceRole = "owner" | "admin" | "editor" | "viewer";
 export type ServiceStatus = "healthy" | "degraded" | "down" | "unknown";
 export type RepositoryRelationship = "primary" | "worker" | "docs" | "infra" | "library" | "other";
+export type WebhookDeliveryStatus = "pending" | "processed" | "ignored" | "failed";
+export type SearchResultKind = "service" | "document" | "team" | "shortcut";
 
 export interface WorkspaceSummary {
   id: string;
   name: string;
   slug: string;
   memberCount: number;
+}
+
+export interface WorkspaceMemberSummary {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: WorkspaceRole;
+  avatarUrl?: string;
 }
 
 export interface TeamSummary {
@@ -34,7 +45,7 @@ export interface ServiceSummary {
   owner: string;
   status: ServiceStatus;
   tier: "critical" | "high" | "medium" | "low";
-  lifecycle: "experimental" | "active" | "deprecated";
+  lifecycle: "experimental" | "active" | "deprecated" | "retired";
   repo: string;
   primaryRepositoryUrl?: string;
   repositories: ServiceRepositoryLinkSummary[];
@@ -64,6 +75,28 @@ export interface ActivityItem {
   serviceSlug?: string;
 }
 
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  actorName: string;
+  summary: string;
+  createdAt: string;
+}
+
+export interface WebhookDeliverySummary {
+  id: string;
+  deliveryId: string;
+  eventName: string;
+  repositoryFullName?: string;
+  status: WebhookDeliveryStatus;
+  signatureValid: boolean;
+  createdAt: string;
+  processedAt?: string;
+  errorMessage?: string;
+}
+
 export interface GithubRepositoryLinkSummary {
   serviceId: string;
   serviceName: string;
@@ -84,6 +117,25 @@ export interface GithubRepositorySummary {
   links: GithubRepositoryLinkSummary[];
 }
 
+export interface SearchResultItem {
+  id: string;
+  kind: SearchResultKind;
+  title: string;
+  description: string;
+  href: string;
+  meta?: string;
+  badge?: string;
+}
+
+export interface SearchResultsPayload {
+  query: string;
+  services: SearchResultItem[];
+  documents: SearchResultItem[];
+  teams: SearchResultItem[];
+  shortcuts: SearchResultItem[];
+  total: number;
+}
+
 export interface DashboardMetrics {
   services: number;
   healthy: number;
@@ -93,6 +145,7 @@ export interface DashboardMetrics {
 
 export interface WorkspaceSnapshot {
   workspace: WorkspaceSummary;
+  members: WorkspaceMemberSummary[];
   teams: TeamSummary[];
   services: ServiceSummary[];
   documents: DocumentSummary[];

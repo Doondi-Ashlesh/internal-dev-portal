@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
+import { validateEnvironment } from "@/lib/env";
+
 import "./globals.css";
+
+validateEnvironment();
 
 export const metadata: Metadata = {
   title: "Internal Developer Portal",

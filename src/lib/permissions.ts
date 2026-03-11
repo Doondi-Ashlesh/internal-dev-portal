@@ -7,14 +7,18 @@ const roleRank: Record<WorkspaceRole, number> = {
   owner: 3
 };
 
+export function hasWorkspaceRole(role: WorkspaceRole, minimumRole: WorkspaceRole) {
+  return roleRank[role] >= roleRank[minimumRole];
+}
+
 export function canManageWorkspace(role: WorkspaceRole) {
-  return roleRank[role] >= roleRank.admin;
+  return hasWorkspaceRole(role, "admin");
 }
 
 export function canEditCatalog(role: WorkspaceRole) {
-  return roleRank[role] >= roleRank.editor;
+  return hasWorkspaceRole(role, "editor");
 }
 
 export function canInviteMembers(role: WorkspaceRole) {
-  return roleRank[role] >= roleRank.admin;
+  return canManageWorkspace(role);
 }

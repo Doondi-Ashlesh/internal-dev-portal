@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bell, ChevronRight, LogOut, Search } from "lucide-react";
+import { Bell, ChevronRight, LogOut } from "lucide-react";
 
 import { auth, signOut } from "@/auth";
+import { GlobalSearch } from "@/components/global-search";
 import { appNavigation } from "@/lib/navigation";
 
 export async function AppShell({
@@ -16,6 +17,7 @@ export async function AppShell({
   const session = await auth();
   const userName = session?.user?.name ?? "Signed-in user";
   const userEmail = session?.user?.email ?? "No email";
+  const userRole = session?.user?.role ?? "viewer";
 
   return (
     <div className="shell">
@@ -39,7 +41,8 @@ export async function AppShell({
               <div>
                 <div className="section-label">Signed In</div>
                 <strong style={{ display: "block", marginTop: 6 }}>{userName}</strong>
-                <span className="muted tiny">{userEmail}</span>
+                <span className="muted tiny" style={{ display: "block" }}>{userEmail}</span>
+                <span className="pill" style={{ marginTop: 10, display: "inline-flex" }}>{userRole}</span>
               </div>
               <form
                 action={async () => {
@@ -98,10 +101,7 @@ export async function AppShell({
                 Internal developer portal
               </h1>
             </div>
-            <label className="search-bar" style={{ maxWidth: 440 }}>
-              <Search size={18} className="muted" />
-              <input placeholder="Search services, docs, runbooks, owners..." readOnly suppressHydrationWarning />
-            </label>
+            <GlobalSearch />
           </div>
           {children}
         </main>

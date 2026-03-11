@@ -1,15 +1,28 @@
-import { createDocument, deleteDocument, updateDocument } from "@/server/actions";
 import { DocumentSummary, ServiceSummary } from "@/lib/types";
+import { createDocument, deleteDocument, updateDocument } from "@/server/actions";
 
 export function DocumentManagement({
   workspaceId,
   services,
-  documents
+  documents,
+  canManage
 }: {
   workspaceId: string;
   services: ServiceSummary[];
   documents: DocumentSummary[];
+  canManage: boolean;
 }) {
+  if (!canManage) {
+    return (
+      <article className="info-card stack">
+        <strong>Docs editing is restricted</strong>
+        <span className="muted tiny">
+          Your current role can read docs and runbooks, but only editors and above can publish or update them.
+        </span>
+      </article>
+    );
+  }
+
   return (
     <div className="stack-lg">
       <article className="info-card stack">
