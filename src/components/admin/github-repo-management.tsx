@@ -18,14 +18,16 @@ export function GithubRepoManagement({
 }) {
   return (
     <div className="stack-lg">
-      <article className="info-card stack">
+      <article className="info-card stack-lg admin-card">
         <div className="row">
-          <strong>Repository import</strong>
+          <div className="section-copy">
+            <div className="section-label">Repository import</div>
+            <p className="muted tiny" style={{ maxWidth: 620 }}>
+              Sync the latest repositories from the signed-in GitHub account, then link each repository to one or more services.
+            </p>
+          </div>
           <span className="pill">{repositories.length} imported</span>
         </div>
-        <span className="muted tiny">
-          Sync the latest repositories from the signed-in GitHub account, then link each repository to one or more services.
-        </span>
         {!canManage ? (
           <span className="badge" data-tone="warning">
             Repository sync is read-only for your current role
@@ -44,7 +46,7 @@ export function GithubRepoManagement({
 
       {repositories.length ? (
         repositories.map((repository) => (
-          <article key={repository.id} className="info-card stack">
+          <article key={repository.id} className="info-card stack-lg admin-card">
             <div className="row">
               <div>
                 <strong>{repository.fullName}</strong>
@@ -58,48 +60,64 @@ export function GithubRepoManagement({
               </a>
             </div>
 
-            <div className="stack">
-              <div className="section-label">Current Links</div>
+            <div className="stack-lg">
+              <div className="section-copy">
+                <div className="section-label">Current Links</div>
+                <p className="muted tiny" style={{ maxWidth: 620 }}>
+                  Repositories can support multiple services and relationship types, which keeps the portal realistic for monorepos and infra-adjacent systems.
+                </p>
+              </div>
               {repository.links.length ? (
-                repository.links.map((link) => (
-                  <div key={`${repository.id}-${link.serviceId}`} className="info-card stack">
-                    <div className="row">
-                      <strong>{link.serviceName}</strong>
-                      <span className="pill">{link.relationshipType}</span>
+                <div className="stack">
+                  {repository.links.map((link) => (
+                    <div key={`${repository.id}-${link.serviceId}`} className="info-card stack">
+                      <div className="row">
+                        <strong>{link.serviceName}</strong>
+                        <span className="pill">{link.relationshipType}</span>
+                      </div>
+                      {canManage ? (
+                        <form action={deleteRepositoryLink}>
+                          <input type="hidden" name="repositoryId" value={repository.id} />
+                          <input type="hidden" name="serviceId" value={link.serviceId} />
+                          <button className="button-link secondary" type="submit">Remove link</button>
+                        </form>
+                      ) : null}
                     </div>
-                    {canManage ? (
-                      <form action={deleteRepositoryLink}>
-                        <input type="hidden" name="repositoryId" value={repository.id} />
-                        <input type="hidden" name="serviceId" value={link.serviceId} />
-                        <button className="button-link secondary" type="submit">Remove link</button>
-                      </form>
-                    ) : null}
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <span className="muted tiny">No service links yet.</span>
+                <div className="empty-state stack">
+                  <strong>No service links yet</strong>
+                  <span className="muted tiny">Map this repository to a service to route ownership and activity correctly.</span>
+                </div>
               )}
             </div>
 
             {canManage ? (
-              <form action={saveRepositoryLink} className="stack">
+              <form action={saveRepositoryLink} className="stack-lg">
                 <input type="hidden" name="repositoryId" value={repository.id} />
-                <div className="row">
-                  <select name="serviceId" defaultValue="">
-                    <option value="">Select a service</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select name="relationshipType" defaultValue="primary">
-                    {relationshipOptions.map((relationship) => (
-                      <option key={relationship} value={relationship}>
-                        {relationship}
-                      </option>
-                    ))}
-                  </select>
+                <div className="form-grid form-grid-two">
+                  <label className="field-stack">
+                    <span className="field-label">Service</span>
+                    <select name="serviceId" defaultValue="">
+                      <option value="">Select a service</option>
+                      {services.map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field-stack">
+                    <span className="field-label">Relationship</span>
+                    <select name="relationshipType" defaultValue="primary">
+                      {relationshipOptions.map((relationship) => (
+                        <option key={relationship} value={relationship}>
+                          {relationship}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
                 <div className="row" style={{ justifyContent: "flex-start" }}>
                   <button className="button-link" type="submit">Add or update link</button>
@@ -109,7 +127,7 @@ export function GithubRepoManagement({
           </article>
         ))
       ) : (
-        <article className="info-card stack">
+        <article className="empty-state stack">
           <strong>No repositories imported yet</strong>
           <span className="muted tiny">
             Import GitHub repositories to start linking them to services and preparing for webhook-driven activity sync.

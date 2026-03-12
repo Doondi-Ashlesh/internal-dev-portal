@@ -6,7 +6,7 @@ describe("environment configuration", () => {
   it("parses and trims runtime values", () => {
     const parsed = parseEnvironment({
       NODE_ENV: "development",
-      DATABASE_URL: " file:./test.db ",
+      DATABASE_URL: " postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public ",
       AUTH_SECRET: " test-secret ",
       GITHUB_CLIENT_ID: " client-id ",
       GITHUB_CLIENT_SECRET: " client-secret ",
@@ -14,7 +14,7 @@ describe("environment configuration", () => {
       NEXT_PUBLIC_APP_URL: " https://example.com "
     });
 
-    expect(parsed.databaseUrl).toBe("file:./test.db");
+    expect(parsed.databaseUrl).toBe("postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public");
     expect(parsed.authSecret).toBe("test-secret");
     expect(parsed.githubClientId).toBe("client-id");
     expect(parsed.githubClientSecret).toBe("client-secret");
@@ -25,7 +25,7 @@ describe("environment configuration", () => {
   it("requires AUTH_SECRET in production", () => {
     const parsed = parseEnvironment({
       NODE_ENV: "production",
-      DATABASE_URL: "file:./prod.db",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public",
       NEXT_PUBLIC_APP_URL: "https://portal.example.com"
     });
 
@@ -35,7 +35,7 @@ describe("environment configuration", () => {
   it("requires GitHub OAuth credentials to be configured together", () => {
     const parsed = parseEnvironment({
       NODE_ENV: "development",
-      DATABASE_URL: "file:./dev.db",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public",
       GITHUB_CLIENT_ID: "client-only",
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
     });

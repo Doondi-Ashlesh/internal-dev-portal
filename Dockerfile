@@ -7,13 +7,13 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL=file:./prisma/local.db
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public
 ENV AUTH_SECRET=container-demo-secret
 ENV GITHUB_WEBHOOK_SECRET=container-demo-webhook-secret
 ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run db:setup
+RUN npm run prisma:generate
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -22,7 +22,6 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV DATABASE_URL=file:./prisma/local.db
 ENV AUTH_SECRET=container-demo-secret
 ENV GITHUB_WEBHOOK_SECRET=container-demo-webhook-secret
 ENV NEXT_PUBLIC_APP_URL=http://localhost:3000

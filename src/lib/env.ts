@@ -5,9 +5,13 @@ const trim = (value?: string) => {
   return normalized ? normalized : undefined;
 };
 
-const envSchema = z.object({
+const postgresUrlSchema = z.string().min(1).refine((value) => /^postgres(ql)?:\/\//i.test(value), {
+  message: "DATABASE_URL must be a PostgreSQL connection string."
+});
+
+export const envSchema = z.object({
   nodeEnv: z.enum(["development", "test", "production"]).default("development"),
-  databaseUrl: z.string().min(1).default("file:./prisma/local.db"),
+  databaseUrl: postgresUrlSchema.default("postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public"),
   authSecret: z.string().optional(),
   githubClientId: z.string().optional(),
   githubClientSecret: z.string().optional(),

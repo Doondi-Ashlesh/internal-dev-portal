@@ -1,0 +1,46 @@
+
+> internal-dev-portal@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.93:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 3.1s
+ ○ Compiling / ...
+ ✓ Compiled / in 3s (615 modules)
+ GET / 200 in 3660ms
+ GET / 200 in 192ms
+ GET / 200 in 119ms
+ GET / 200 in 285ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1640ms (809 modules)
+ GET /dashboard 200 in 2804ms
+ ✓ Compiled /api/search in 494ms (818 modules)
+ GET /api/search?q= 200 in 887ms
+ GET /api/search?q= 200 in 136ms
+ ○ Compiling /catalog ...
+ ✓ Compiled /catalog in 715ms (837 modules)
+ GET /catalog 200 in 1382ms
+ ○ Compiling /docs ...
+ ✓ Compiled /docs in 688ms (843 modules)
+ GET /docs 200 in 1076ms
+ ○ Compiling /activity ...
+ ✓ Compiled /activity in 633ms (845 modules)
+ GET /activity 200 in 957ms
+ ○ Compiling /admin/integrations ...
+ ✓ Compiled /admin/integrations in 565ms (848 modules)
+ GET /admin/integrations 200 in 897ms
+ ○ Compiling /admin/members ...
+ ✓ Compiled /admin/members in 736ms (848 modules)
+ GET /admin/members 200 in 1049ms
+ GET /dashboard 200 in 417ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 925ms (847 modules)
+ GET /login 200 in 1334ms
+ POST /dashboard 303 in 1416ms
+ ○ Compiling / ...
+ ✓ Compiled / in 552ms (611 modules)
+ GET / 200 in 728ms

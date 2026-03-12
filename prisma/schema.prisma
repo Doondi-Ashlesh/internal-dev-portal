@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -49,6 +49,7 @@ model WorkspaceMember {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, userId])
+  @@index([userId])
 }
 
 model Team {
@@ -93,6 +94,7 @@ model Service {
   events            ActivityEvent[]
 
   @@unique([workspaceId, slug])
+  @@index([workspaceId, name])
 }
 
 model ServiceOwner {
@@ -124,6 +126,7 @@ model Repository {
   services      ServiceRepository[]
 
   @@unique([workspaceId, fullName])
+  @@index([workspaceId, updatedAt])
 }
 
 model ServiceRepository {
@@ -137,6 +140,7 @@ model ServiceRepository {
   repository       Repository             @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@unique([serviceId, repositoryId])
+  @@index([repositoryId, relationshipType])
 }
 
 model Environment {
@@ -185,6 +189,7 @@ model Document {
   author          User?        @relation("DocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   @@unique([workspaceId, serviceId, slug])
+  @@index([workspaceId, type, updatedAt])
 }
 
 model ApiLink {
@@ -216,13 +221,15 @@ model HealthCheck {
   message        String?
   checkedAt      DateTime     @default(now())
   source         HealthSource @relation(fields: [healthSourceId], references: [id], onDelete: Cascade)
+
+  @@index([healthSourceId, checkedAt])
 }
 
 model ActivityEvent {
   id           String      @id @default(cuid())
-  workspaceId   String
-  serviceId     String?
-  actorUserId   String?
+  workspaceId  String
+  serviceId    String?
+  actorUserId  String?
   source       EventSource
   type         String
   title        String
@@ -233,6 +240,9 @@ model ActivityEvent {
   workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   service      Service?    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   actor        User?       @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, occurredAt])
+  @@index([serviceId, occurredAt])
 }
 
 model AuditLog {
@@ -246,6 +256,8 @@ model AuditLog {
   createdAt    DateTime  @default(now())
   workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   actor        User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
 }
 
 model WebhookDelivery {
@@ -264,6 +276,7 @@ model WebhookDelivery {
   workspace          Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@unique([provider, deliveryId])
+  @@index([workspaceId, createdAt])
 }
 
 enum Role {
