@@ -368,7 +368,6 @@ Permissions in the current build:
 - The current Playwright suite is a smoke layer, not deep regression coverage.
 - Background jobs for recurring health checks and richer sync workflows are not built yet.
 - Hosted production deployment has not yet been validated end to end with live GitHub OAuth and live webhook deliveries.
-- Playwright still prints Next.js's non-blocking warning about `next start` with `output: "standalone"`; local smoke coverage still passes, and Docker continues to use the standalone server correctly.
 - Local Prisma migration commands are flaky on this Windows machine even though the committed migration SQL is valid and CI passes.
 
 ## Next Recommended Work
