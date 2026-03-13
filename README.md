@@ -9,37 +9,35 @@ This app is positioned as a Backstage-lite platform that brings together:
 - environment and deploy links
 - GitHub auth and repository sync
 - webhook-driven engineering activity
-- workspace roles and audit logging
+- workspace roles, invites, and audit logging
 
 ## Current Status
 
-The project is now in a strong working-v1 state and is already demoable as a portfolio-quality product.
+The project is in a strong working-v1 state and is ready to demo as a portfolio-quality SaaS.
 
 What is complete today:
 
 - authenticated app shell with protected routes
-- premium visual redesign with a polished engineering-operations look and feel
-- coordinated inner-screen polish across dashboard, catalog, docs, activity, service detail, and admin experiences
-- dashboard, catalog, docs, activity, service detail, and admin areas
+- premium visual redesign across landing, shell, dashboard, catalog, service detail, docs, activity, and admin screens
 - services, teams, and markdown document CRUD
 - GitHub login plus local demo access
+- membership-aware access control with invite-based onboarding
 - repository import from GitHub and repo-to-service linking
 - signed GitHub webhook verification and normalized activity events
 - role-based mutation guards and audit logs
-- command-style global search
-- focused unit tests for permissions, env validation, and webhook logic
+- command-style global search with keyboard navigation
+- focused Vitest unit tests for permissions, env validation, invites, and webhook logic
 - Playwright smoke coverage for login, dashboard, catalog mutation, docs, and search-to-service navigation
-- CI, Docker packaging, and a deployment-friendly health route
-- PostgreSQL migration with Prisma migration history and seeded demo data
-- sidebar usability fix so the left navigation scrolls independently
+- CI, Docker packaging, Render blueprint support, and a deployment-friendly health route
+- PostgreSQL migration history and seeded demo data
+- safe hosted bootstrap flow that seeds demo data only when the database is empty
 
 What is still pending:
 
 - final consistency pass for empty, loading, and error states across the main product surfaces
-- richer member management and invite flows
-- background workers for recurring health checks or sync jobs
+- background workers for recurring health checks and sync jobs
 - deeper E2E coverage beyond the current smoke suite
-- final hosted deployment and production environment validation
+- final hosted OAuth and webhook validation against a live public URL
 
 ## What Makes This Showcase-Ready
 
@@ -51,73 +49,34 @@ The current implementation is intentionally shaped like a real SaaS foundation r
 - CRUD for services, teams, and markdown documents
 - many-to-many repository-to-service mapping
 - signed GitHub webhook verification and normalization
+- invite-based onboarding and membership-aware access
 - role-based authorization on server mutations
 - audit logging for administrative and catalog changes
 - activity feed that captures both manual and integration-driven events
 - real command-style global search with keyboard navigation
 - focused Vitest unit coverage plus Playwright browser smoke coverage
-- GitHub Actions CI and standalone deployment packaging
-- a cohesive UI system across the shell and the main in-product workflows
+- GitHub Actions CI, production build/start verification, Docker standalone packaging, and Render blueprint support
+- a cohesive UI system across both shell and inner product workflows
 
-## Design Refresh
-
-The latest pass upgraded the product from a functional admin interface to a more portfolio-ready engineering console.
-
-Highlights:
-
-- stronger typography with a clearer brand and UI hierarchy
-- darker, more premium control-plane shell styling
-- richer surfaces, cards, buttons, inputs, and search presentation
-- layered background treatment and more intentional motion
-- redesigned landing page that feels like a serious SaaS product
-- sidebar structure and workspace chrome that better match the platform use case
-- dashboard, service detail, and admin surfaces that now match the shell much more closely
-
-Latest inner-screen polish delivered:
-
-- stronger dashboard hero, metrics, and content hierarchy
-- richer service detail posture, metadata, docs, and activity presentation
-- more intentional admin form and management surfaces for services, docs, teams, and integrations
-
-Remaining UI follow-up:
-
-- align empty, loading, and error states with the new visual system
-- do one final micro-interaction and spacing consistency pass if needed
-
-## Verified Today
+## Verified
 
 The current build has been verified with:
 
-- `npm run db:start`
-- `npm run db:setup`
+- `npm run prisma:generate`
+- `npm run prisma:seed`
+- `npm run prisma:seed:if-empty`
 - `npm run typecheck`
 - `npm run test`
 - `npm run build`
 - `npm run test:e2e`
-- `npm run check`
 - `npm run start`
-
-Focused unit tests currently cover:
-
-- role and permission gating
-- runtime environment validation
-- GitHub webhook signature verification
-- normalized webhook event mapping for `push`, `release`, and `workflow_run`
-
-Playwright smoke coverage currently covers:
-
-- demo login flow
-- dashboard rendering
-- global search to service detail navigation
-- catalog create/delete mutation
-- docs page rendering
 
 Operational verification completed against PostgreSQL:
 
-- Prisma migration applied successfully
-- seed data loaded successfully
+- seed data loads successfully
 - `/api/health` returns `database: ok`
 - protected routes respond normally against the Postgres-backed app
+- invite links resolve correctly against the same runtime base URL used for webhook instructions
 
 ## Tech Stack
 
@@ -143,11 +102,13 @@ Operational verification completed against PostgreSQL:
 - docs and runbooks
 - activity feed
 - integrations admin
-- members admin
+- members admin with invite management
+- public invite-acceptance flow
 
 ### Platform capabilities
 
 - workspace roles: `owner`, `admin`, `editor`, `viewer`
+- workspace invites and membership-aware login
 - Prisma data layer
 - migration-backed schema management
 - audit logging
@@ -158,6 +119,7 @@ Operational verification completed against PostgreSQL:
 - health endpoint
 - CI workflow
 - Docker deployment path
+- Render blueprint for hosted deployment
 
 ## Local Setup
 
@@ -165,13 +127,17 @@ Operational verification completed against PostgreSQL:
 2. Copy `.env.example` to `.env`.
 3. Fill in the GitHub OAuth values if you want real GitHub login.
 4. Start the local PostgreSQL container.
-5. Apply migrations and seed demo data.
-6. Start the app.
+5. Generate Prisma client.
+6. Apply migrations.
+7. Seed demo data.
+8. Start the app.
 
 ```powershell
 npm install
 npm run db:start
-npm run db:setup
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run prisma:seed
 npm run dev
 ```
 
@@ -198,7 +164,15 @@ npm run test:e2e
 - `GITHUB_CLIENT_ID`: GitHub OAuth app client ID
 - `GITHUB_CLIENT_SECRET`: GitHub OAuth app client secret
 - `GITHUB_WEBHOOK_SECRET`: shared secret used to verify signed GitHub webhooks
-- `NEXT_PUBLIC_APP_URL`: base URL used for displaying webhook configuration instructions
+- `NEXT_PUBLIC_APP_URL`: optional explicit base URL used for invite links and webhook configuration instructions
+
+Runtime URL resolution order:
+
+1. `NEXT_PUBLIC_APP_URL`
+2. `RENDER_EXTERNAL_URL`
+3. `VERCEL_PROJECT_PRODUCTION_URL`
+4. `VERCEL_URL`
+5. `http://localhost:3000`
 
 The app validates runtime configuration at startup. In production mode, `AUTH_SECRET` is required, GitHub OAuth credentials must be provided as a complete pair, and `DATABASE_URL` must be a PostgreSQL connection string.
 
@@ -209,7 +183,6 @@ A local Postgres container is defined in `docker-compose.yml`.
 Useful commands:
 
 - `npm run db:start`
-- `npm run db:setup`
 - `npm run db:stop`
 - `npm run db:logs`
 - `npm run db:reset`
@@ -222,9 +195,15 @@ postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public
 
 ## Prisma Migrations
 
-The initial PostgreSQL migration lives in `prisma/migrations/20260311142000_init/migration.sql`.
+The migrations live under `prisma/migrations`.
 
-This project now uses standard Prisma migration flow instead of the earlier SQLite bootstrap script path.
+This project uses normal Prisma migration history in CI and on Linux-hosted deployment targets.
+
+Local note for this Windows machine:
+
+- Prisma's schema engine is still intermittently failing for `prisma migrate dev` and `prisma migrate deploy` even though the schema validates.
+- CI and hosted Linux environments should use the standard Prisma commands.
+- If the local migration engine fails again, use the committed SQL migrations as the source of truth.
 
 ## End-to-End Tests
 
@@ -244,11 +223,17 @@ Create a GitHub OAuth App with:
 - Homepage URL: `http://localhost:3000`
 - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
 
-Once configured, sign in through `/login` and use the Integrations area to import repositories.
+For a hosted deployment, change both values to your public app URL.
+
+GitHub sign-in is membership-aware in the current build:
+
+- existing workspace members can enter directly
+- invited users can sign in and then accept their invite from the join page
+- users without membership or a valid invite stay on `/login`
 
 ## GitHub Webhook Setup
 
-After login, the Integrations page shows the webhook endpoint. For local development, it will be:
+After login, the Integrations page shows the webhook endpoint. Locally it will be:
 
 ```text
 http://localhost:3000/api/webhooks/github
@@ -297,36 +282,41 @@ On every push and pull request it:
 6. runs the Playwright smoke suite
 7. builds the demo Docker image
 
-## Deployment Options
+## Hosted Deployment
 
-### Option 1: Node host + managed PostgreSQL
+### Render blueprint
 
-This is the cleanest production-shaped deployment path for the app.
+A Render blueprint is included at the repository root in `render.yaml`.
 
-```powershell
-npm install
-npm run build
-npm run start
-```
+It deploys:
 
-Use a managed Postgres instance and set `DATABASE_URL` in the environment.
+- a Node web service for `internal-dev-portal`
+- a managed PostgreSQL database
 
-### Option 2: Docker image + external PostgreSQL
+The blueprint is configured to:
+
+- build from the `internal-dev-portal` subdirectory
+- run `prisma migrate deploy` before each deploy
+- run `prisma:seed:if-empty` so the first deploy gets demo data without wiping later data
+- populate `DATABASE_URL` from the managed Postgres instance
+- generate `AUTH_SECRET` and `GITHUB_WEBHOOK_SECRET`
+- use `/api/health` as the health check
+
+Before the hosted GitHub integration is fully live, you still need to fill in:
+
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+After Render assigns the public URL, update your GitHub OAuth app callback URL and webhook settings to match that hosted domain.
+
+### Docker image + external PostgreSQL
 
 A multistage `Dockerfile` is included and Next.js is configured with `output: "standalone"`.
 
 ```powershell
 docker build -t internal-dev-portal .
-docker run -p 3000:3000 -e DATABASE_URL="postgresql://..." internal-dev-portal
+docker run -p 3000:3000 -e DATABASE_URL="postgresql://..." -e AUTH_SECRET="..." internal-dev-portal
 ```
-
-## Known Gaps
-
-- There is a non-blocking Vitest warning caused by the parent workspace `tsconfig.json` extending Expo config outside this app.
-- The current Playwright suite is a smoke layer, not deep regression coverage.
-- Background jobs for recurring health checks and richer sync workflows are not built yet.
-- Hosted production deployment has not been exercised yet.
-- Playwright still prints a local warning because the smoke suite uses `next start` while Next recommends the standalone server for this output mode. The suite still passes.
 
 ## Auth and Roles
 
@@ -339,9 +329,16 @@ Workspace roles are enforced on the server:
 
 Permissions in the current build:
 
-- owner/admin: member roles, teams, integrations, repo links
+- owner/admin: member roles, invites, teams, integrations, repo links
 - editor and above: services and documents
 - viewer: read-only portal access
+
+## Demo Notes
+
+- Demo access creates a local owner session immediately.
+- Seed data includes example services, docs, audit logs, webhook deliveries, and a pending invite so the product feels alive on first run.
+- The seeded invite token is `demo-invite-token`.
+- Hosted bootstrap uses `prisma:seed:if-empty` so demo data appears on the first deployment without resetting later data.
 
 ## Scripts
 
@@ -360,26 +357,26 @@ Permissions in the current build:
 - `npm run prisma:migrate`
 - `npm run prisma:migrate:deploy`
 - `npm run prisma:seed`
+- `npm run prisma:seed:if-empty`
 - `npm run db:start`
 - `npm run db:stop`
 - `npm run db:logs`
 - `npm run db:reset`
-- `npm run db:setup`
-- `npm run db:dev:setup`
 
-## Demo Notes
+## Known Gaps
 
-- Demo access creates a local owner session immediately.
-- GitHub sign-in auto-provisions local workspace membership in development so you can test integrations quickly.
-- Seed data includes example services, docs, audit logs, and webhook deliveries to make the product feel alive on first run.
-- The seeded workspace is stored in PostgreSQL.
+- The current Playwright suite is a smoke layer, not deep regression coverage.
+- Background jobs for recurring health checks and richer sync workflows are not built yet.
+- Hosted production deployment has not yet been validated end to end with live GitHub OAuth and live webhook deliveries.
+- Playwright still prints Next.js's non-blocking warning about `next start` with `output: "standalone"`; local smoke coverage still passes, and Docker continues to use the standalone server correctly.
+- Local Prisma migration commands are flaky on this Windows machine even though the committed migration SQL is valid and CI passes.
 
 ## Next Recommended Work
 
-1. Deploy the app against a managed Postgres instance and verify the hosted production story.
-2. Validate GitHub OAuth and webhook behavior in the hosted environment.
-3. Improve member invitation and workspace onboarding flows.
+1. Deploy the app using the Render blueprint and verify the live URL.
+2. Update the GitHub OAuth app and webhook configuration to the hosted domain.
+3. Validate hosted sign-in, invite acceptance, repo import, and webhook ingestion.
 4. Add worker-based health polling and recurring sync jobs.
-5. Expand Playwright coverage for members, integrations, and document CRUD.
+5. Expand Playwright coverage for members, invitations, integrations, and document CRUD.
 6. Add a final consistency pass for empty, loading, and error states.
 7. Add richer failure-state coverage around GitHub webhook processing and repo sync.

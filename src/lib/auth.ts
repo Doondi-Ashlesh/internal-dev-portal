@@ -46,6 +46,7 @@ export async function upsertWorkspaceUser(input: {
   name?: string | null;
   image?: string | null;
   defaultRole: WorkspaceRole;
+  autoJoinWorkspace?: boolean;
 }) {
   const email = input.email ?? undefined;
   const name = input.name ?? undefined;
@@ -72,7 +73,7 @@ export async function upsertWorkspaceUser(input: {
     }
   });
 
-  if (existingWorkspace) {
+  if (existingWorkspace && input.autoJoinWorkspace) {
     await db.workspaceMember.upsert({
       where: {
         workspaceId_userId: {
@@ -116,6 +117,10 @@ async function syncTokenFromIdentity(token: Record<string, unknown>, input: { id
     token.role = membership.role;
     token.workspaceId = membership.workspaceId;
     token.workspaceSlug = membership.workspaceSlug;
+  } else {
+    delete token.role;
+    delete token.workspaceId;
+    delete token.workspaceSlug;
   }
 
   return token;
@@ -140,7 +145,8 @@ const providers = [
     name: "Demo access",
     credentials: {
       name: { label: "Name", type: "text" },
-      email: { label: "Email", type: "email" }
+      email: { label: "Email", type: "email" },
+      inviteToken: { label: "Invite token", type: "text" }
     },
     authorize: async (credentials) => {
       const parsed = demoSchema.safeParse({
@@ -152,11 +158,13 @@ const providers = [
         return null;
       }
 
+      const inviteToken = typeof credentials?.inviteToken === "string" ? credentials.inviteToken : undefined;
       const user = await upsertWorkspaceUser({
         email: parsed.data.email,
         name: parsed.data.name,
         image: null,
-        defaultRole: "owner"
+        defaultRole: "owner",
+        autoJoinWorkspace: !inviteToken
       });
 
       if (!user) {
@@ -171,7 +179,7 @@ const providers = [
         email: user.email,
         image: user.image,
         githubId: user.githubId ?? undefined,
-        role: membership?.role ?? "owner",
+        role: membership?.role ?? "viewer",
         workspaceId: membership?.workspaceId,
         workspaceSlug: membership?.workspaceSlug
       };
@@ -194,7 +202,8 @@ export const authConfig: NextAuthConfig = {
           email: user.email,
           name: user.name,
           image: user.image,
-          defaultRole: getDefaultGithubWorkspaceRole()
+          defaultRole: getDefaultGithubWorkspaceRole(),
+          autoJoinWorkspace: false
         });
       }
 
@@ -207,7 +216,8 @@ export const authConfig: NextAuthConfig = {
           email: user?.email ?? (typeof token.email === "string" ? token.email : undefined),
           name: user?.name ?? (typeof token.name === "string" ? token.name : undefined),
           image: user?.image ?? null,
-          defaultRole: getDefaultGithubWorkspaceRole()
+          defaultRole: getDefaultGithubWorkspaceRole(),
+          autoJoinWorkspace: false
         });
 
         if (localUser) {

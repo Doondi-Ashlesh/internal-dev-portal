@@ -1,12 +1,20 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { importGithubRepositories } from "@/lib/github";
-import { WorkspaceRole } from "@/lib/types";
-import { requireWorkspaceAccess, requireWorkspaceRole } from "@/server/access";
-import { recordActivityEvent, recordAuditLog } from "@/server/ops";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+import { db } from "@/lib/db";
+import { importGithubRepositories } from "@/lib/github";
+import {
+  createWorkspaceInviteToken,
+  getWorkspaceInviteExpiry,
+  normalizeInviteEmail,
+  resolveWorkspaceInviteStatus
+} from "@/lib/invites";
+import { WorkspaceRole } from "@/lib/types";
+import { requireCurrentUserIdentity, requireWorkspaceAccess } from "@/server/access";
+import { recordActivityEvent, recordAuditLog } from "@/server/ops";
 
 const teamSchema = z.object({
   workspaceId: z.string().min(1),
@@ -46,6 +54,20 @@ const repositoryUnlinkSchema = z.object({
   serviceId: z.string().min(1)
 });
 
+const workspaceInviteSchema = z.object({
+  workspaceId: z.string().min(1),
+  email: z.string().email(),
+  role: z.enum(["admin", "editor", "viewer"])
+});
+
+const workspaceInviteActionSchema = z.object({
+  inviteId: z.string().min(1)
+});
+
+const workspaceInviteAcceptSchema = z.object({
+  token: z.string().min(12)
+});
+
 const workspaceMemberRoleSchema = z.object({
   memberId: z.string().min(1),
   role: z.enum(["owner", "admin", "editor", "viewer"])
@@ -58,6 +80,14 @@ function normalizeOptional(value: FormDataEntryValue | null) {
 
   const trimmed = value.trim();
   return trimmed.length ? trimmed : undefined;
+}
+
+function normalizeRequiredEmail(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return normalizeInviteEmail(value);
 }
 
 function parseTags(value: string | undefined) {
@@ -635,6 +665,211 @@ export async function deleteRepositoryLink(formData: FormData) {
   });
 
   revalidateWorkspaceViews([service.slug]);
+}
+
+export async function createWorkspaceInvite(formData: FormData) {
+  const parsed = workspaceInviteSchema.parse({
+    workspaceId: formData.get("workspaceId"),
+    email: normalizeRequiredEmail(formData.get("email")),
+    role: formData.get("role")
+  });
+
+  const context = await requireAdminAccess(parsed.workspaceId);
+  const email = normalizeInviteEmail(parsed.email);
+
+  const existingMember = await db.workspaceMember.findFirst({
+    where: {
+      workspaceId: context.workspaceId,
+      user: {
+        email
+      }
+    },
+    include: { user: true }
+  });
+
+  if (existingMember) {
+    throw new Error("That email already belongs to a workspace member.");
+  }
+
+  const existingInvite = await db.workspaceInvite.findFirst({
+    where: {
+      workspaceId: context.workspaceId,
+      email,
+      status: "pending"
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const inviteData = {
+    email,
+    role: parsed.role as WorkspaceRole,
+    token: createWorkspaceInviteToken(),
+    invitedByUserId: context.userId,
+    expiresAt: getWorkspaceInviteExpiry()
+  };
+
+  const invite = existingInvite
+    ? await db.workspaceInvite.update({
+        where: { id: existingInvite.id },
+        data: inviteData
+      })
+    : await db.workspaceInvite.create({
+        data: {
+          workspaceId: context.workspaceId,
+          ...inviteData
+        }
+      });
+
+  await recordAuditLog({
+    workspaceId: context.workspaceId,
+    actorUserId: context.userId,
+    entityType: "workspaceInvite",
+    entityId: invite.id,
+    action: existingInvite ? "workspace.invite.renewed" : "workspace.invite.created",
+    metadata: serializeSummary(`${existingInvite ? "Renewed" : "Created"} invite for ${email}.`, {
+      email,
+      role: invite.role,
+      status: invite.status
+    })
+  });
+
+  await recordActivityEvent({
+    workspaceId: context.workspaceId,
+    actorUserId: context.userId,
+    source: "manual",
+    type: existingInvite ? "workspace.invite.renewed" : "workspace.invite.created",
+    title: existingInvite ? `Workspace invite renewed` : `Workspace invite created`,
+    body: `${context.userName} ${existingInvite ? "renewed" : "created"} an invite for ${email} as ${invite.role}.`,
+    metadata: { inviteId: invite.id, email, role: invite.role }
+  });
+
+  revalidateWorkspaceViews();
+}
+
+export async function revokeWorkspaceInvite(formData: FormData) {
+  const parsed = workspaceInviteActionSchema.parse({
+    inviteId: formData.get("inviteId")
+  });
+
+  const invite = await db.workspaceInvite.findUnique({ where: { id: parsed.inviteId } });
+
+  if (!invite) {
+    throw new Error("Workspace invite not found.");
+  }
+
+  const context = await requireAdminAccess(invite.workspaceId);
+  const updated = await db.workspaceInvite.update({
+    where: { id: invite.id },
+    data: {
+      status: "revoked"
+    }
+  });
+
+  await recordAuditLog({
+    workspaceId: context.workspaceId,
+    actorUserId: context.userId,
+    entityType: "workspaceInvite",
+    entityId: updated.id,
+    action: "workspace.invite.revoked",
+    metadata: serializeSummary(`Revoked invite for ${updated.email}.`, {
+      email: updated.email,
+      role: updated.role,
+      status: updated.status
+    })
+  });
+
+  await recordActivityEvent({
+    workspaceId: context.workspaceId,
+    actorUserId: context.userId,
+    source: "manual",
+    type: "workspace.invite.revoked",
+    title: `Workspace invite revoked`,
+    body: `${context.userName} revoked the invite for ${updated.email}.`,
+    metadata: { inviteId: updated.id, email: updated.email }
+  });
+
+  revalidateWorkspaceViews();
+}
+
+export async function acceptWorkspaceInvite(formData: FormData) {
+  const parsed = workspaceInviteAcceptSchema.parse({
+    token: formData.get("token")
+  });
+
+  const identity = await requireCurrentUserIdentity();
+
+  if (!identity.userEmail) {
+    throw new Error("The signed-in account must have an email address to accept a workspace invite.");
+  }
+
+  const invite = await db.workspaceInvite.findUnique({
+    where: { token: parsed.token },
+    include: { workspace: true }
+  });
+
+  if (!invite) {
+    throw new Error("Invite not found.");
+  }
+
+  const resolvedStatus = resolveWorkspaceInviteStatus(invite.status, invite.expiresAt);
+
+  if (resolvedStatus !== "pending") {
+    throw new Error("This invite is no longer active.");
+  }
+
+  if (normalizeInviteEmail(identity.userEmail) !== normalizeInviteEmail(invite.email)) {
+    throw new Error("The signed-in account email does not match the invite email.");
+  }
+
+  await db.workspaceMember.upsert({
+    where: {
+      workspaceId_userId: {
+        workspaceId: invite.workspaceId,
+        userId: identity.userId
+      }
+    },
+    update: {},
+    create: {
+      workspaceId: invite.workspaceId,
+      userId: identity.userId,
+      role: invite.role as WorkspaceRole
+    }
+  });
+
+  await db.workspaceInvite.update({
+    where: { id: invite.id },
+    data: {
+      status: "accepted",
+      acceptedByUserId: identity.userId,
+      acceptedAt: new Date()
+    }
+  });
+
+  await recordAuditLog({
+    workspaceId: invite.workspaceId,
+    actorUserId: identity.userId,
+    entityType: "workspaceInvite",
+    entityId: invite.id,
+    action: "workspace.invite.accepted",
+    metadata: serializeSummary(`${identity.userName} accepted the workspace invite for ${invite.email}.`, {
+      email: invite.email,
+      role: invite.role,
+      workspaceName: invite.workspace.name
+    })
+  });
+
+  await recordActivityEvent({
+    workspaceId: invite.workspaceId,
+    actorUserId: identity.userId,
+    source: "manual",
+    type: "workspace.invite.accepted",
+    title: `Workspace invite accepted`,
+    body: `${identity.userName} joined ${invite.workspace.name} as ${invite.role}.`,
+    metadata: { inviteId: invite.id, role: invite.role }
+  });
+
+  revalidateWorkspaceViews();
+  redirect("/dashboard");
 }
 
 export async function updateWorkspaceMemberRole(formData: FormData) {

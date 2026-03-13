@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { resolveWorkspaceInviteStatus } from "@/lib/invites";
 import { sampleWorkspace } from "@/lib/sample-data";
 import {
   ActivityItem,
@@ -9,6 +11,7 @@ import {
   RepositoryRelationship,
   ServiceSummary,
   WebhookDeliverySummary,
+  WorkspaceInviteSummary,
   WorkspaceMemberSummary,
   WorkspaceSnapshot,
   WorkspaceSummary
@@ -343,6 +346,32 @@ export async function getWorkspaceWebhookDeliveries(limit = 12): Promise<Webhook
       createdAt: formatRelativeDate(delivery.createdAt),
       processedAt: delivery.processedAt ? formatRelativeDate(delivery.processedAt) : undefined,
       errorMessage: delivery.errorMessage ?? undefined
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getWorkspaceInvites(limit = 12): Promise<WorkspaceInviteSummary[]> {
+  try {
+    const context = await getCurrentWorkspaceContext();
+    const invites = await db.workspaceInvite.findMany({
+      where: { workspaceId: context.workspaceId },
+      include: { invitedBy: true },
+      orderBy: { createdAt: "desc" },
+      take: limit
+    });
+
+    return invites.map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      role: invite.role,
+      status: resolveWorkspaceInviteStatus(invite.status, invite.expiresAt),
+      inviteUrl: `${env.appBaseUrl}/join/${invite.token}`,
+      invitedByName: invite.invitedBy?.name ?? invite.invitedBy?.email ?? "Workspace admin",
+      createdAt: formatRelativeDate(invite.createdAt),
+      expiresAt: formatRelativeDate(invite.expiresAt),
+      acceptedAt: invite.acceptedAt ? formatRelativeDate(invite.acceptedAt) : undefined
     }));
   } catch {
     return [];

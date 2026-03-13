@@ -4,10 +4,11 @@ import { Github, MonitorSmartphone, Shield } from "lucide-react";
 
 import { signIn } from "@/auth";
 import { isGithubAuthConfigured } from "@/lib/env";
-import { getOptionalCurrentWorkspaceContext } from "@/server/access";
+import { getOptionalCurrentUserIdentity, getOptionalCurrentWorkspaceContext } from "@/server/access";
 
 export default async function LoginPage() {
   const access = await getOptionalCurrentWorkspaceContext();
+  const identity = await getOptionalCurrentUserIdentity();
   const githubReady = isGithubAuthConfigured();
 
   if (access) {
@@ -27,9 +28,18 @@ export default async function LoginPage() {
               </h1>
             </div>
             <p className="muted">
-              GitHub OAuth and demo access are both supported. In local development, GitHub users are auto-provisioned into
-              the workspace so you can test real repository sync and webhook flows without manual setup steps.
+              GitHub sign-in is now membership-aware: users need an existing workspace role or an invite link before they can enter the portal.
+              Demo access is still available locally for owner-level product development.
             </p>
+
+            {identity && !access ? (
+              <article className="empty-state stack">
+                <strong>Signed in, but no workspace access yet</strong>
+                <span className="muted tiny">
+                  You are currently signed in as {identity.userEmail ?? identity.userName}. Ask for an invite link or use demo access in local development.
+                </span>
+              </article>
+            ) : null}
 
             <div className="panel-grid">
               <article className="info-card stack">
@@ -38,7 +48,7 @@ export default async function LoginPage() {
                   <strong>GitHub sign in</strong>
                 </div>
                 <span className="muted tiny">
-                  {githubReady ? "Use your GitHub account for real workspace login and repository sync." : "Add GitHub client credentials to .env to enable OAuth login."}
+                  {githubReady ? "Use your GitHub account if it already has workspace access or a matching invite." : "Add GitHub client credentials to .env to enable OAuth login."}
                 </span>
                 {githubReady ? (
                   <form
@@ -79,7 +89,7 @@ export default async function LoginPage() {
             <div className="row" style={{ justifyContent: "flex-start" }}>
               <span className="badge">
                 <Shield size={14} />
-                Protected routes, RBAC checks, and audit logging are enabled
+                Protected routes, RBAC checks, audit logging, and invite-based onboarding are enabled
               </span>
               <Link href="/" className="button-link secondary">Back to landing</Link>
             </div>

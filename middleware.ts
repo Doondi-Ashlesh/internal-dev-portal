@@ -9,7 +9,7 @@ export default auth((request) => {
   const isApiAuth = pathname.startsWith("/api/auth");
   const isWebhook = pathname.startsWith("/api/webhooks/github");
   const isHealth = pathname.startsWith("/api/health");
-  const isPublic = publicPaths.has(pathname);
+  const isPublic = publicPaths.has(pathname) || pathname.startsWith("/join/");
 
   if (isApiAuth || isWebhook || isHealth || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
     return NextResponse.next();

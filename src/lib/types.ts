@@ -3,6 +3,7 @@ export type ServiceStatus = "healthy" | "degraded" | "down" | "unknown";
 export type RepositoryRelationship = "primary" | "worker" | "docs" | "infra" | "library" | "other";
 export type WebhookDeliveryStatus = "pending" | "processed" | "ignored" | "failed";
 export type SearchResultKind = "service" | "document" | "team" | "shortcut";
+export type WorkspaceInviteStatus = "pending" | "accepted" | "revoked" | "expired";
 
 export interface WorkspaceSummary {
   id: string;
@@ -18,6 +19,34 @@ export interface WorkspaceMemberSummary {
   email: string;
   role: WorkspaceRole;
   avatarUrl?: string;
+}
+
+export interface WorkspaceInviteSummary {
+  id: string;
+  email: string;
+  role: WorkspaceRole;
+  status: WorkspaceInviteStatus;
+  inviteUrl: string;
+  invitedByName: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+}
+
+export interface WorkspaceJoinInviteSummary {
+  id: string;
+  workspaceName: string;
+  workspaceSlug: string;
+  email: string;
+  role: WorkspaceRole;
+  status: WorkspaceInviteStatus;
+  invitedByName: string;
+  expiresAt: string;
+  inviteUrl: string;
+  token: string;
+  currentUserEmail?: string;
+  currentUserName?: string;
+  acceptedByName?: string;
 }
 
 export interface TeamSummary {

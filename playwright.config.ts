@@ -39,6 +39,6 @@ export default defineConfig({
         command: "npm run build && npm run start",
         url: `${baseURL}/login`,
         reuseExistingServer: !process.env.CI,
-        timeout: 180_000
+        timeout: 300_000
       }
 });

@@ -1,16 +1,19 @@
 import { AppShell } from "@/components/app-shell";
+import { InviteManagement } from "@/components/admin/invite-management";
 import { TeamManagement } from "@/components/admin/team-management";
 import { canInviteMembers, canManageWorkspace } from "@/lib/permissions";
 import { updateWorkspaceMemberRole } from "@/server/actions";
 import { getPageWorkspaceContext } from "@/server/access";
-import { getWorkspaceAuditLogs, getWorkspaceMembers, getWorkspaceSnapshot } from "@/server/workspace";
+import { getWorkspaceAuditLogs, getWorkspaceInvites, getWorkspaceMembers, getWorkspaceSnapshot } from "@/server/workspace";
 
 export default async function MembersPage() {
   const access = await getPageWorkspaceContext();
   const snapshot = await getWorkspaceSnapshot();
   const members = await getWorkspaceMembers();
+  const invites = await getWorkspaceInvites();
   const auditLogs = await getWorkspaceAuditLogs();
   const canManage = canManageWorkspace(access.role);
+  const canInvite = canInviteMembers(access.role);
 
   return (
     <AppShell workspaceName={snapshot.workspace.name} currentPath="/admin/members">
@@ -21,14 +24,13 @@ export default async function MembersPage() {
               <div className="section-label">Admin</div>
               <h1 className="page-title" style={{ fontSize: "2.5rem" }}>Workspace access</h1>
               <p className="muted" style={{ maxWidth: 720 }}>
-                Roles are enforced on server actions, displayed in the app shell, and adjustable from this screen for a
-                more production-shaped access story.
+                Roles are enforced on server actions, invites are explicit, and workspace access can now be onboarded through a proper acceptance flow instead of a loose local shortcut.
               </p>
             </div>
             <div className="row" style={{ justifyContent: "flex-start" }}>
               <span className="pill">Current role: {access.role}</span>
               <span className="pill">{members.length} members</span>
-              <span className="pill">{auditLogs.length} recent audit events</span>
+              <span className="pill">{invites.length} tracked invites</span>
             </div>
           </div>
           <aside className="hero-sidebar">
@@ -41,11 +43,11 @@ export default async function MembersPage() {
                 </div>
                 <div className="compact-item">
                   <strong>Can invite members</strong>
-                  <span className="tiny muted">{String(canInviteMembers(access.role))}</span>
+                  <span className="tiny muted">{String(canInvite)}</span>
                 </div>
                 <div className="compact-item">
-                  <strong>Editors and above</strong>
-                  <span className="tiny muted">Can update services, docs, and runbooks.</span>
+                  <strong>Invite-based onboarding</strong>
+                  <span className="tiny muted">New users can accept a role-scoped workspace invitation from a dedicated join flow.</span>
                 </div>
               </div>
             </article>
@@ -92,6 +94,14 @@ export default async function MembersPage() {
 
       <section className="card card-pad stack-lg">
         <div className="section-copy">
+          <div className="section-label">Invites</div>
+          <h2 className="section-title" style={{ marginTop: 8 }}>Member onboarding</h2>
+        </div>
+        <InviteManagement workspaceId={snapshot.workspace.id} invites={invites} canInvite={canInvite} />
+      </section>
+
+      <section className="card card-pad stack-lg">
+        <div className="section-copy">
           <div className="section-label">Team Admin</div>
           <h2 className="section-title" style={{ marginTop: 8 }}>Manage teams</h2>
         </div>
@@ -118,7 +128,7 @@ export default async function MembersPage() {
         ) : (
           <article className="empty-state stack">
             <strong>No audit events yet</strong>
-            <span className="muted tiny">Workspace changes will appear here as members edit the catalog and integrations.</span>
+            <span className="muted tiny">Workspace changes will appear here as members edit the catalog, access controls, and integrations.</span>
           </article>
         )}
       </section>

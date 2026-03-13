@@ -21,6 +21,7 @@ model Workspace {
   environments      Environment[]
   events            ActivityEvent[]
   auditLogs         AuditLog[]
+  invites           WorkspaceInvite[]
   webhookDeliveries WebhookDelivery[]
 }
 
@@ -32,11 +33,13 @@ model User {
   githubId      String?           @unique
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  memberships   WorkspaceMember[]
-  ownedServices ServiceOwner[]
-  authoredDocs  Document[]        @relation("DocumentAuthor")
-  events        ActivityEvent[]   @relation("ActivityActor")
-  auditLogs     AuditLog[]        @relation("AuditActor")
+  memberships     WorkspaceMember[]
+  ownedServices   ServiceOwner[]
+  authoredDocs    Document[]         @relation("DocumentAuthor")
+  events          ActivityEvent[]    @relation("ActivityActor")
+  auditLogs       AuditLog[]         @relation("AuditActor")
+  sentInvites     WorkspaceInvite[]  @relation("WorkspaceInviteInvitedBy")
+  acceptedInvites WorkspaceInvite[]  @relation("WorkspaceInviteAcceptedBy")
 }
 
 model WorkspaceMember {
@@ -52,6 +55,26 @@ model WorkspaceMember {
   @@index([userId])
 }
 
+model WorkspaceInvite {
+  id               String                @id @default(cuid())
+  workspaceId      String
+  email            String
+  role             Role
+  token            String                @unique
+  status           WorkspaceInviteStatus @default(pending)
+  invitedByUserId  String?
+  acceptedByUserId String?
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy        User?                 @relation("WorkspaceInviteInvitedBy", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  acceptedBy       User?                 @relation("WorkspaceInviteAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status, createdAt])
+  @@index([email, status])
+}
 model Team {
   id          String         @id @default(cuid())
   workspaceId String
@@ -286,6 +309,11 @@ enum Role {
   viewer
 }
 
+enum WorkspaceInviteStatus {
+  pending
+  accepted
+  revoked
+}
 enum OwnerType {
   primary
   secondary

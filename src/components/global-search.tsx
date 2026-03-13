@@ -31,7 +31,6 @@ function isEditableTarget(target: EventTarget | null) {
 export function GlobalSearch() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultsPayload>(emptyResults);
@@ -58,10 +57,6 @@ export function GlobalSearch() {
   }
 
   function openSearch() {
-    if (!ready) {
-      return;
-    }
-
     setOpen(true);
   }
 
@@ -71,14 +66,6 @@ export function GlobalSearch() {
   }
 
   useEffect(() => {
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-
     function handleGlobalKeydown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -100,7 +87,7 @@ export function GlobalSearch() {
 
     window.addEventListener("keydown", handleGlobalKeydown);
     return () => window.removeEventListener("keydown", handleGlobalKeydown);
-  }, [open, ready]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -196,7 +183,7 @@ export function GlobalSearch() {
 
   return (
     <>
-      <button type="button" className="search-bar search-trigger" data-ready={ready ? "true" : "false"} onClick={openSearch}>
+      <button type="button" className="search-bar search-trigger" onClick={openSearch}>
         <Search size={18} className="muted" />
         <span className="search-placeholder">Search services, docs, runbooks, owners...</span>
         <span className="search-shortcut">Ctrl K</span>

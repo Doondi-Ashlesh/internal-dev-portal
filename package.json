@@ -20,6 +20,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "node prisma/seed.js",
+    "prisma:seed:if-empty": "node prisma/seed-if-empty.js",
     "db:start": "docker compose up -d --wait postgres",
     "db:stop": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

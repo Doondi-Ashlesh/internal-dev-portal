@@ -14,7 +14,7 @@ test.describe("authenticated smoke flows", () => {
     await page.goto("/dashboard");
 
     const searchTrigger = page.getByRole("button", { name: /Search services, docs, runbooks, owners/i });
-    await expect(searchTrigger).toHaveAttribute("data-ready", "true");
+    await expect(searchTrigger).toBeVisible();
     await searchTrigger.click();
 
     const input = page.getByLabel("Global search input");

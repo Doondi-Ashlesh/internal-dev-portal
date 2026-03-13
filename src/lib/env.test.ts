@@ -11,7 +11,7 @@ describe("environment configuration", () => {
       GITHUB_CLIENT_ID: " client-id ",
       GITHUB_CLIENT_SECRET: " client-secret ",
       GITHUB_WEBHOOK_SECRET: " webhook-secret ",
-      NEXT_PUBLIC_APP_URL: " https://example.com "
+      NEXT_PUBLIC_APP_URL: " https://example.com/ "
     });
 
     expect(parsed.databaseUrl).toBe("postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public");
@@ -20,6 +20,25 @@ describe("environment configuration", () => {
     expect(parsed.githubClientSecret).toBe("client-secret");
     expect(parsed.githubWebhookSecret).toBe("webhook-secret");
     expect(parsed.appBaseUrl).toBe("https://example.com");
+  });
+
+  it("uses hosted provider URLs when an explicit app URL is not set", () => {
+    const renderParsed = parseEnvironment({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public",
+      AUTH_SECRET: "render-secret",
+      RENDER_EXTERNAL_URL: "https://internal-dev-portal.onrender.com/"
+    });
+
+    const vercelParsed = parseEnvironment({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public",
+      AUTH_SECRET: "vercel-secret",
+      VERCEL_URL: "internal-dev-portal.vercel.app"
+    });
+
+    expect(renderParsed.appBaseUrl).toBe("https://internal-dev-portal.onrender.com");
+    expect(vercelParsed.appBaseUrl).toBe("https://internal-dev-portal.vercel.app");
   });
 
   it("requires AUTH_SECRET in production", () => {

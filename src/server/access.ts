@@ -12,14 +12,17 @@ import {
 import { hasWorkspaceRole } from "@/lib/permissions";
 import { WorkspaceRole } from "@/lib/types";
 
-export interface CurrentWorkspaceContext {
-  workspaceId: string;
-  workspaceName: string;
+export interface CurrentUserIdentity {
   userId: string;
   userName: string;
   userEmail?: string;
-  role: WorkspaceRole;
   accessToken?: string;
+}
+
+export interface CurrentWorkspaceContext extends CurrentUserIdentity {
+  workspaceId: string;
+  workspaceName: string;
+  role: WorkspaceRole;
 }
 
 function getFallbackRole(session: Session | null): WorkspaceRole {
@@ -50,7 +53,8 @@ async function provisionSessionUser(session: Session | null) {
     email: session.user.email,
     name: session.user.name,
     image: session.user.image,
-    defaultRole: getFallbackRole(session)
+    defaultRole: getFallbackRole(session),
+    autoJoinWorkspace: false
   });
 }
 
@@ -86,22 +90,36 @@ async function resolveSessionUser() {
   return { session, user };
 }
 
-export const getCurrentWorkspaceContext = cache(async (): Promise<CurrentWorkspaceContext> => {
+export const getCurrentUserIdentity = cache(async (): Promise<CurrentUserIdentity> => {
   const { session, user } = await resolveSessionUser();
-  let membership = await db.workspaceMember.findFirst({
-    where: { userId: user.id },
+
+  return {
+    userId: user.id,
+    userName: user.name ?? session.user?.name ?? "Unknown user",
+    userEmail: user.email ?? session.user?.email ?? undefined,
+    accessToken: session.user?.accessToken
+  };
+});
+
+export async function getOptionalCurrentUserIdentity() {
+  try {
+    return await getCurrentUserIdentity();
+  } catch {
+    return null;
+  }
+}
+
+export async function requireCurrentUserIdentity() {
+  return getCurrentUserIdentity();
+}
+
+export const getCurrentWorkspaceContext = cache(async (): Promise<CurrentWorkspaceContext> => {
+  const identity = await getCurrentUserIdentity();
+  const membership = await db.workspaceMember.findFirst({
+    where: { userId: identity.userId },
     include: { workspace: true },
     orderBy: { createdAt: "asc" }
   });
-
-  if (!membership) {
-    await provisionSessionUser(session);
-    membership = await db.workspaceMember.findFirst({
-      where: { userId: user.id },
-      include: { workspace: true },
-      orderBy: { createdAt: "asc" }
-    });
-  }
 
   if (!membership) {
     throw new Error("No workspace membership found for the signed-in user.");
@@ -110,11 +128,11 @@ export const getCurrentWorkspaceContext = cache(async (): Promise<CurrentWorkspa
   return {
     workspaceId: membership.workspaceId,
     workspaceName: membership.workspace.name,
-    userId: user.id,
-    userName: user.name ?? session.user?.name ?? "Unknown user",
-    userEmail: user.email ?? session.user?.email ?? undefined,
+    userId: identity.userId,
+    userName: identity.userName,
+    userEmail: identity.userEmail,
     role: membership.role as WorkspaceRole,
-    accessToken: session.user?.accessToken
+    accessToken: identity.accessToken
   };
 });
 
