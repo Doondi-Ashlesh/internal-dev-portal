@@ -5,6 +5,7 @@ import { expect, test as setup } from "@playwright/test";
 const authFile = path.join(__dirname, "..", "..", "playwright", ".auth", "demo-user.json");
 
 setup("authenticate demo workspace", async ({ page }) => {
+  expect(process.env.ENABLE_DEMO_AUTH, "Playwright demo auth setup requires ENABLE_DEMO_AUTH=1 in the test runtime.").toBe("1");
   await mkdir(path.dirname(authFile), { recursive: true });
 
   await page.goto("/login");

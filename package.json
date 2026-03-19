@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start-production.js",
     "lint": "next lint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -21,12 +21,15 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "node prisma/seed.js",
     "prisma:seed:if-empty": "node prisma/seed-if-empty.js",
+    "prisma:seed:demo": "node prisma/seed.js --allow-demo-seed",
+    "prisma:seed:demo:if-empty": "node prisma/seed-if-empty.js --allow-demo-seed",
     "db:start": "docker compose up -d --wait postgres",
     "db:stop": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:reset": "prisma migrate reset --force",
-    "db:setup": "npm run prisma:generate && npm run prisma:migrate:deploy && npm run prisma:seed",
-    "db:dev:setup": "npm run db:start && npm run db:setup"
+    "db:setup": "npm run prisma:generate && npm run prisma:migrate:deploy",
+    "db:setup:demo": "npm run db:setup && npm run prisma:seed:demo",
+    "db:dev:setup": "npm run db:start && npm run db:setup:demo"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

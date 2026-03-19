@@ -1,3 +1,6 @@
+const { assertDemoSeedAllowed } = require("./seed-guard");
 const { runSeed } = require("./seed-data");
 
-runSeed({ reset: true });
+if (assertDemoSeedAllowed("prisma/seed.js")) {
+  runSeed({ reset: true });
+}

@@ -3,13 +3,14 @@ import { redirect } from "next/navigation";
 import { Github, MonitorSmartphone, Shield } from "lucide-react";
 
 import { signIn } from "@/auth";
-import { isGithubAuthConfigured } from "@/lib/env";
+import { isDemoAuthEnabled, isGithubAuthConfigured } from "@/lib/env";
 import { getOptionalCurrentUserIdentity, getOptionalCurrentWorkspaceContext } from "@/server/access";
 
 export default async function LoginPage() {
   const access = await getOptionalCurrentWorkspaceContext();
   const identity = await getOptionalCurrentUserIdentity();
   const githubReady = isGithubAuthConfigured();
+  const demoAuthEnabled = isDemoAuthEnabled();
 
   if (access) {
     redirect("/dashboard");
@@ -24,19 +25,22 @@ export default async function LoginPage() {
             <div>
               <div className="eyebrow">Sign In</div>
               <h1 className="page-title" style={{ fontSize: "2.5rem" }}>
-                Connect GitHub or use demo access to enter the developer portal.
+                {demoAuthEnabled
+                  ? "Connect GitHub or use demo access to enter the developer portal."
+                  : "Connect GitHub to enter the developer portal."}
               </h1>
             </div>
             <p className="muted">
               GitHub sign-in is now membership-aware: users need an existing workspace role or an invite link before they can enter the portal.
-              Demo access is still available locally for owner-level product development.
+              {demoAuthEnabled ? " Demo access is enabled for local product development." : ""}
             </p>
 
             {identity && !access ? (
               <article className="empty-state stack">
                 <strong>Signed in, but no workspace access yet</strong>
                 <span className="muted tiny">
-                  You are currently signed in as {identity.userEmail ?? identity.userName}. Ask for an invite link or use demo access in local development.
+                  You are currently signed in as {identity.userEmail ?? identity.userName}. Ask for an invite link
+                  {demoAuthEnabled ? " or use demo access in local development." : "."}
                 </span>
               </article>
             ) : null}
@@ -64,26 +68,28 @@ export default async function LoginPage() {
                 )}
               </article>
 
-              <article className="info-card stack">
-                <div className="row" style={{ justifyContent: "flex-start" }}>
-                  <MonitorSmartphone size={18} className="strong" />
-                  <strong>Demo access</strong>
-                </div>
-                <span className="muted tiny">Creates a local owner session immediately for product development.</span>
-                <form
-                  action={async () => {
-                    "use server";
-                    await signIn("demo", {
-                      name: "Foundry Demo",
-                      email: "demo@foundry.dev",
-                      redirectTo: "/dashboard"
-                    });
-                  }}
-                  className="stack"
-                >
-                  <button className="button-link secondary" type="submit">Enter demo workspace</button>
-                </form>
-              </article>
+              {demoAuthEnabled ? (
+                <article className="info-card stack">
+                  <div className="row" style={{ justifyContent: "flex-start" }}>
+                    <MonitorSmartphone size={18} className="strong" />
+                    <strong>Demo access</strong>
+                  </div>
+                  <span className="muted tiny">Creates a local owner session immediately for product development.</span>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signIn("demo", {
+                        name: "Foundry Demo",
+                        email: "demo@foundry.dev",
+                        redirectTo: "/dashboard"
+                      });
+                    }}
+                    className="stack"
+                  >
+                    <button className="button-link secondary" type="submit">Enter demo workspace</button>
+                  </form>
+                </article>
+              ) : null}
             </div>
 
             <div className="row" style={{ justifyContent: "flex-start" }}>

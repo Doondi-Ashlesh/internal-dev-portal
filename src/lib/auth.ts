@@ -4,7 +4,7 @@ import type { NextAuthConfig } from "next-auth";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
-import { env, isGithubAuthConfigured } from "@/lib/env";
+import { env, isDemoAuthEnabled, isGithubAuthConfigured } from "@/lib/env";
 import { WorkspaceRole } from "@/lib/types";
 
 const demoSchema = z.object({
@@ -149,6 +149,10 @@ const providers = [
       inviteToken: { label: "Invite token", type: "text" }
     },
     authorize: async (credentials) => {
+      if (!isDemoAuthEnabled()) {
+        return null;
+      }
+
       const parsed = demoSchema.safeParse({
         name: credentials?.name,
         email: credentials?.email

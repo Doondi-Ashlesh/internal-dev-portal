@@ -11,6 +11,7 @@ describe("environment configuration", () => {
       GITHUB_CLIENT_ID: " client-id ",
       GITHUB_CLIENT_SECRET: " client-secret ",
       GITHUB_WEBHOOK_SECRET: " webhook-secret ",
+      ENABLE_DEMO_AUTH: " true ",
       NEXT_PUBLIC_APP_URL: " https://example.com/ "
     });
 
@@ -20,6 +21,7 @@ describe("environment configuration", () => {
     expect(parsed.githubClientSecret).toBe("client-secret");
     expect(parsed.githubWebhookSecret).toBe("webhook-secret");
     expect(parsed.appBaseUrl).toBe("https://example.com");
+    expect(parsed.enableDemoAuth).toBe(true);
   });
 
   it("uses hosted provider URLs when an explicit app URL is not set", () => {
@@ -60,5 +62,15 @@ describe("environment configuration", () => {
     });
 
     expect(() => validateEnvironmentConfig(parsed)).toThrow("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be configured together");
+  });
+
+  it("disables demo auth by default", () => {
+    const parsed = parseEnvironment({
+      NODE_ENV: "development",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    });
+
+    expect(parsed.enableDemoAuth).toBe(false);
   });
 });

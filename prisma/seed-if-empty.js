@@ -1,7 +1,12 @@
 const { PrismaClient } = require("@prisma/client");
+const { assertDemoSeedAllowed } = require("./seed-guard");
 const { runSeed } = require("./seed-data");
 
 async function main() {
+  if (!assertDemoSeedAllowed("prisma/seed-if-empty.js")) {
+    return;
+  }
+
   const prisma = new PrismaClient();
 
   try {

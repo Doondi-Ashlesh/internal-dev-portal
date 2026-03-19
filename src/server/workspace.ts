@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { resolveWorkspaceInviteStatus } from "@/lib/invites";
-import { sampleWorkspace } from "@/lib/sample-data";
 import {
   ActivityItem,
   AuditLogItem,
@@ -17,6 +16,21 @@ import {
   WorkspaceSummary
 } from "@/lib/types";
 import { getCurrentWorkspaceContext, getOptionalCurrentWorkspaceContext } from "@/server/access";
+
+export class WorkspaceDataUnavailableError extends Error {
+  constructor(message = "Workspace data is unavailable.") {
+    super(message);
+    this.name = "WorkspaceDataUnavailableError";
+  }
+}
+
+function asWorkspaceDataUnavailable(error: unknown, message = "Workspace data is unavailable.") {
+  if (error instanceof WorkspaceDataUnavailableError) {
+    return error;
+  }
+
+  return new WorkspaceDataUnavailableError(message);
+}
 
 function parseTags(tags: string): string[] {
   try {
@@ -228,9 +242,15 @@ async function buildWorkspaceSnapshot(): Promise<WorkspaceSnapshot | null> {
 
 export async function getWorkspaceSnapshot(): Promise<WorkspaceSnapshot> {
   try {
-    return (await buildWorkspaceSnapshot()) ?? sampleWorkspace;
-  } catch {
-    return sampleWorkspace;
+    const snapshot = await buildWorkspaceSnapshot();
+
+    if (!snapshot) {
+      throw new WorkspaceDataUnavailableError("No workspace data is available for the current request.");
+    }
+
+    return snapshot;
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 
@@ -246,7 +266,7 @@ export async function getWorkspaceActivity(): Promise<ActivityItem[]> {
   return (await getWorkspaceSnapshot()).activity;
 }
 
-export async function getWorkspaceMembers() {
+export async function getWorkspaceMembers(): Promise<WorkspaceMemberSummary[]> {
   try {
     const context = await getCurrentWorkspaceContext();
     const members = await db.workspaceMember.findMany({
@@ -256,8 +276,8 @@ export async function getWorkspaceMembers() {
     });
 
     return mapWorkspaceMembers(members);
-  } catch {
-    return sampleWorkspace.members;
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 
@@ -293,8 +313,8 @@ export async function getWorkspaceRepositories(): Promise<GithubRepositorySummar
         relationshipType: link.relationshipType as RepositoryRelationship
       }))
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 
@@ -322,8 +342,8 @@ export async function getWorkspaceAuditLogs(limit = 12): Promise<AuditLogItem[]>
         createdAt: formatRelativeDate(log.createdAt)
       };
     });
-  } catch {
-    return [];
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 
@@ -347,8 +367,8 @@ export async function getWorkspaceWebhookDeliveries(limit = 12): Promise<Webhook
       processedAt: delivery.processedAt ? formatRelativeDate(delivery.processedAt) : undefined,
       errorMessage: delivery.errorMessage ?? undefined
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 
@@ -373,8 +393,8 @@ export async function getWorkspaceInvites(limit = 12): Promise<WorkspaceInviteSu
       expiresAt: formatRelativeDate(invite.expiresAt),
       acceptedAt: invite.acceptedAt ? formatRelativeDate(invite.acceptedAt) : undefined
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    throw asWorkspaceDataUnavailable(error);
   }
 }
 

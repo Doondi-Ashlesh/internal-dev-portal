@@ -6,13 +6,14 @@ import { signIn } from "@/auth";
 import { acceptWorkspaceInvite } from "@/server/actions";
 import { getOptionalCurrentUserIdentity } from "@/server/access";
 import { getJoinInviteContext } from "@/server/invites";
-import { isGithubAuthConfigured } from "@/lib/env";
+import { isDemoAuthEnabled, isGithubAuthConfigured } from "@/lib/env";
 
 export default async function JoinInvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const invite = await getJoinInviteContext(token);
   const currentUser = await getOptionalCurrentUserIdentity();
   const githubReady = isGithubAuthConfigured();
+  const demoAuthEnabled = isDemoAuthEnabled();
 
   if (!invite) {
     return (
@@ -154,28 +155,30 @@ export default async function JoinInvitePage({ params }: { params: Promise<{ tok
                   )}
                 </article>
 
-                <article className="info-card stack-lg admin-card">
-                  <div className="row" style={{ justifyContent: "flex-start" }}>
-                    <UserPlus size={18} className="strong" />
-                    <strong>Demo invite access</strong>
-                  </div>
-                  <span className="muted tiny">
-                    Local development shortcut. This signs in with the invited email so you can test the onboarding flow without email delivery.
-                  </span>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await signIn("demo", {
-                        name: invite.email.split("@")[0] || "Invited User",
-                        email: invite.email,
-                        inviteToken: invite.token,
-                        redirectTo: `/join/${invite.token}`
-                      });
-                    }}
-                  >
-                    <button className="button-link secondary" type="submit">Use demo access</button>
-                  </form>
-                </article>
+                {demoAuthEnabled ? (
+                  <article className="info-card stack-lg admin-card">
+                    <div className="row" style={{ justifyContent: "flex-start" }}>
+                      <UserPlus size={18} className="strong" />
+                      <strong>Demo invite access</strong>
+                    </div>
+                    <span className="muted tiny">
+                      Local development shortcut. This signs in with the invited email so you can test the onboarding flow without email delivery.
+                    </span>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await signIn("demo", {
+                          name: invite.email.split("@")[0] || "Invited User",
+                          email: invite.email,
+                          inviteToken: invite.token,
+                          redirectTo: `/join/${invite.token}`
+                        });
+                      }}
+                    >
+                      <button className="button-link secondary" type="submit">Use demo access</button>
+                    </form>
+                  </article>
+                ) : null}
               </div>
             )}
 

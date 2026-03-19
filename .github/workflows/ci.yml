@@ -44,7 +44,7 @@ jobs:
         run: npm ci
 
       - name: Apply Prisma migrations and seed demo data
-        run: npm run db:setup
+        run: npm run db:setup:demo
 
       - name: Verify application
         run: npm run check

@@ -37,6 +37,10 @@ export default defineConfig({
     ? undefined
     : {
         command: "npm run build && npm run start",
+        env: {
+          ...process.env,
+          ENABLE_DEMO_AUTH: "1"
+        },
         url: `${baseURL}/login`,
         reuseExistingServer: !process.env.CI,
         timeout: 300_000

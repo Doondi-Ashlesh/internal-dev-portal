@@ -5,6 +5,8 @@ const trim = (value?: string) => {
   return normalized ? normalized : undefined;
 };
 
+const truthyEnvValues = new Set(["1", "true", "yes", "on"]);
+
 const postgresUrlSchema = z.string().min(1).refine((value) => /^postgres(ql)?:\/\//i.test(value), {
   message: "DATABASE_URL must be a PostgreSQL connection string."
 });
@@ -31,6 +33,16 @@ const resolveAppBaseUrl = (input: NodeJS.ProcessEnv | Record<string, string | un
   );
 };
 
+const parseBooleanFlag = (value?: string) => {
+  const normalized = trim(value)?.toLowerCase();
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  return truthyEnvValues.has(normalized);
+};
+
 export const envSchema = z.object({
   nodeEnv: z.enum(["development", "test", "production"]).default("development"),
   databaseUrl: postgresUrlSchema.default("postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public"),
@@ -38,7 +50,8 @@ export const envSchema = z.object({
   githubClientId: z.string().optional(),
   githubClientSecret: z.string().optional(),
   githubWebhookSecret: z.string().optional(),
-  appBaseUrl: z.string().url().optional()
+  appBaseUrl: z.string().url().optional(),
+  enableDemoAuth: z.boolean().default(false)
 });
 
 export type RuntimeEnv = z.infer<typeof envSchema>;
@@ -51,7 +64,8 @@ export function parseEnvironment(input: NodeJS.ProcessEnv | Record<string, strin
     githubClientId: trim(input.GITHUB_CLIENT_ID),
     githubClientSecret: trim(input.GITHUB_CLIENT_SECRET),
     githubWebhookSecret: trim(input.GITHUB_WEBHOOK_SECRET),
-    appBaseUrl: resolveAppBaseUrl(input)
+    appBaseUrl: resolveAppBaseUrl(input),
+    enableDemoAuth: parseBooleanFlag(input.ENABLE_DEMO_AUTH)
   });
 }
 
@@ -79,4 +93,8 @@ export function isGithubAuthConfigured() {
 
 export function isGithubWebhookConfigured() {
   return Boolean(env.githubWebhookSecret);
+}
+
+export function isDemoAuthEnabled() {
+  return env.enableDemoAuth;
 }
