@@ -13,11 +13,15 @@ test.describe("authenticated smoke flows", () => {
   test("global search navigates to a seeded service detail page", async ({ page }) => {
     await page.goto("/dashboard");
 
-    const searchTrigger = page.getByRole("button", { name: /Search services, docs, runbooks, owners/i });
-    await expect(searchTrigger).toBeVisible();
-    await searchTrigger.click();
+    await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
 
-    const input = page.getByLabel("Global search input");
+    const searchShortcut = process.platform === "darwin" ? "Meta+K" : "Control+K";
+    await page.keyboard.press(searchShortcut);
+
+    const dialog = page.getByRole("dialog", { name: "Global search" });
+    await expect(dialog).toBeVisible();
+
+    const input = dialog.getByLabel("Global search input");
     await expect(input).toBeVisible();
     await input.fill("Billing API");
 
