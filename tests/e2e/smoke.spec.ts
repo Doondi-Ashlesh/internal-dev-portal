@@ -14,6 +14,8 @@ function collectSearchDiagnostics() {
     triggerPresent: Boolean(trigger),
     triggerDisabled: trigger?.disabled ?? null,
     triggerText: trigger?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+    triggerAriaExpanded: trigger?.getAttribute("aria-expanded"),
+    triggerDataSearchOpen: trigger?.getAttribute("data-search-open"),
     overlayPresent: Boolean(document.querySelector(".search-overlay")),
     dialogPresent: Boolean(document.querySelector('[role="dialog"][aria-label="Global search"]')),
     dialogCount: document.querySelectorAll('[role="dialog"]').length,
@@ -62,7 +64,7 @@ test.describe("authenticated smoke flows", () => {
     await searchTrigger.click();
 
     try {
-      await expect(dialog).toBeVisible({ timeout: 3_000 });
+      await expect(searchTrigger).toHaveAttribute("data-search-open", "true", { timeout: 3_000 });
     } catch {
       const afterClickState = await page.evaluate(collectSearchDiagnostics);
       const diagnostics = {
@@ -78,7 +80,28 @@ test.describe("authenticated smoke flows", () => {
       });
 
       throw new Error(
-        `Global search dialog did not open after clicking the visible trigger. Diagnostics: ${JSON.stringify(diagnostics)}`
+        `Global search trigger state did not change after click. Diagnostics: ${JSON.stringify(diagnostics)}`
+      );
+    }
+
+    try {
+      await expect(dialog).toBeVisible({ timeout: 3_000 });
+    } catch {
+      const afterStateChangeState = await page.evaluate(collectSearchDiagnostics);
+      const diagnostics = {
+        beforeClickState,
+        afterStateChangeState,
+        consoleErrors,
+        pageErrors
+      };
+
+      await testInfo.attach("global-search-diagnostics", {
+        body: JSON.stringify(diagnostics, null, 2),
+        contentType: "application/json"
+      });
+
+      throw new Error(
+        `Global search state changed but the dialog did not render as expected. Diagnostics: ${JSON.stringify(diagnostics)}`
       );
     }
 

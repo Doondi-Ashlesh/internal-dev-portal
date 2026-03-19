@@ -183,7 +183,14 @@ export function GlobalSearch() {
 
   return (
     <>
-      <button type="button" className="search-bar search-trigger" onClick={openSearch}>
+      <button
+        type="button"
+        className="search-bar search-trigger"
+        onClick={openSearch}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        data-search-open={open ? "true" : "false"}
+      >
         <Search size={18} className="muted" />
         <span className="search-placeholder">Search services, docs, runbooks, owners...</span>
         <span className="search-shortcut">Ctrl K</span>
