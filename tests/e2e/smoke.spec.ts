@@ -14,9 +14,9 @@ test.describe("authenticated smoke flows", () => {
     await page.goto("/dashboard");
 
     await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
-
-    const searchShortcut = process.platform === "darwin" ? "Meta+K" : "Control+K";
-    await page.keyboard.press(searchShortcut);
+    const searchTrigger = page.locator("button.search-trigger");
+    await expect(searchTrigger).toBeVisible();
+    await searchTrigger.click();
 
     const dialog = page.getByRole("dialog", { name: "Global search" });
     await expect(dialog).toBeVisible();
