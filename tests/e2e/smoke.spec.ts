@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 function collectSearchDiagnostics() {
   const trigger = document.querySelector("button.search-trigger") as HTMLButtonElement | null;
@@ -21,6 +21,47 @@ function collectSearchDiagnostics() {
     dialogCount: document.querySelectorAll('[role="dialog"]').length,
     bodyOverflow: document.body.style.overflow || null,
     activeElement
+  };
+}
+
+async function collectTriggerHitTarget(page: Page, trigger: Locator) {
+  const boundingBox = await trigger.boundingBox();
+
+  if (!boundingBox) {
+    return {
+      boundingBox: null,
+      hitTarget: null
+    };
+  }
+
+  const x = boundingBox.x + boundingBox.width / 2;
+  const y = boundingBox.y + boundingBox.height / 2;
+
+  const hitTarget = await page.evaluate(
+    ({ hitX, hitY }) => {
+      const element = document.elementFromPoint(hitX, hitY);
+
+      if (!element) {
+        return null;
+      }
+
+      return {
+        tagName: element.tagName,
+        id: element.id || null,
+        className: element.className || null,
+        role: element.getAttribute("role"),
+        ariaLabel: element.getAttribute("aria-label"),
+        dataSearchOpen: element.getAttribute("data-search-open"),
+        insideSearchTrigger: Boolean(element.closest("button.search-trigger")),
+        text: element.textContent?.replace(/\s+/g, " ").trim().slice(0, 120) ?? null
+      };
+    },
+    { hitX: x, hitY: y }
+  );
+
+  return {
+    boundingBox,
+    hitTarget
   };
 }
 
@@ -55,8 +96,9 @@ test.describe("authenticated smoke flows", () => {
     await expect(searchTrigger).toBeVisible();
     await expect(searchTrigger).toBeEnabled();
     const beforeClickState = await page.evaluate(collectSearchDiagnostics);
+    const beforeClickHitTarget = await collectTriggerHitTarget(page, searchTrigger);
     await testInfo.attach("global-search-before-click", {
-      body: JSON.stringify(beforeClickState, null, 2),
+      body: JSON.stringify({ beforeClickState, beforeClickHitTarget }, null, 2),
       contentType: "application/json"
     });
 
@@ -67,12 +109,26 @@ test.describe("authenticated smoke flows", () => {
       await expect(searchTrigger).toHaveAttribute("data-search-open", "true", { timeout: 3_000 });
     } catch {
       const afterClickState = await page.evaluate(collectSearchDiagnostics);
+      const afterClickHitTarget = await collectTriggerHitTarget(page, searchTrigger);
+      await page.evaluate(() => {
+        const trigger = document.querySelector("button.search-trigger") as HTMLButtonElement | null;
+        trigger?.click();
+      });
+      const afterDomClickState = await page.evaluate(collectSearchDiagnostics);
       const diagnostics = {
         beforeClickState,
+        beforeClickHitTarget,
         afterClickState,
+        afterClickHitTarget,
+        afterDomClickState,
         consoleErrors,
         pageErrors
       };
+      const likelyCause = !afterClickHitTarget.hitTarget?.insideSearchTrigger
+        ? "click_intercepted_or_overlapped"
+        : afterDomClickState.triggerDataSearchOpen === "true"
+          ? "pointer_click_path_failed_but_dom_click_opened_search"
+          : "react_click_handler_or_client_runtime_not_active";
 
       await testInfo.attach("global-search-diagnostics", {
         body: JSON.stringify(diagnostics, null, 2),
@@ -80,7 +136,7 @@ test.describe("authenticated smoke flows", () => {
       });
 
       throw new Error(
-        `Global search trigger state did not change after click. Diagnostics: ${JSON.stringify(diagnostics)}`
+        `Global search trigger state did not change after click. Likely cause: ${likelyCause}. Diagnostics: ${JSON.stringify(diagnostics)}`
       );
     }
 
