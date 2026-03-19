@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useRef, useState, startTransition } from "
 import { useRouter } from "next/navigation";
 import { BookOpenText, CornerDownLeft, Layers3, Search, ShieldCheck, Sparkles } from "lucide-react";
 
-import { SearchResultItem, SearchResultsPayload } from "@/lib/types";
+import type { SearchResultItem, SearchResultsPayload } from "@/lib/types";
 
 const emptyResults: SearchResultsPayload = {
   query: "",
