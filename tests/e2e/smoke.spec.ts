@@ -1,5 +1,27 @@
 import { expect, test } from "@playwright/test";
 
+function collectSearchDiagnostics() {
+  const trigger = document.querySelector("button.search-trigger") as HTMLButtonElement | null;
+  const activeElement = document.activeElement instanceof HTMLElement
+    ? {
+        tagName: document.activeElement.tagName,
+        className: document.activeElement.className,
+        text: document.activeElement.textContent?.replace(/\s+/g, " ").trim() ?? null
+      }
+    : null;
+
+  return {
+    triggerPresent: Boolean(trigger),
+    triggerDisabled: trigger?.disabled ?? null,
+    triggerText: trigger?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+    overlayPresent: Boolean(document.querySelector(".search-overlay")),
+    dialogPresent: Boolean(document.querySelector('[role="dialog"][aria-label="Global search"]')),
+    dialogCount: document.querySelectorAll('[role="dialog"]').length,
+    bodyOverflow: document.body.style.overflow || null,
+    activeElement
+  };
+}
+
 test.describe("authenticated smoke flows", () => {
   test("renders the seeded dashboard workspace", async ({ page }) => {
     await page.goto("/dashboard");
@@ -10,29 +32,55 @@ test.describe("authenticated smoke flows", () => {
     await expect(page.getByRole("heading", { name: "Billing API", exact: true })).toBeVisible();
   });
 
-  test("global search navigates to a seeded service detail page", async ({ page }) => {
+  test("global search navigates to a seeded service detail page", async ({ page }, testInfo) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        consoleErrors.push(message.text());
+      }
+    });
+
+    page.on("pageerror", (error) => {
+      pageErrors.push(error.message);
+    });
+
     await page.goto("/dashboard");
 
     await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
     const searchTrigger = page.locator("button.search-trigger");
     await expect(searchTrigger).toBeVisible();
     await expect(searchTrigger).toBeEnabled();
+    const beforeClickState = await page.evaluate(collectSearchDiagnostics);
+    await testInfo.attach("global-search-before-click", {
+      body: JSON.stringify(beforeClickState, null, 2),
+      contentType: "application/json"
+    });
 
     const dialog = page.getByRole("dialog", { name: "Global search" });
-    await expect
-      .poll(
-        async () => {
-          try {
-            await searchTrigger.click();
-            return await dialog.isVisible();
-          } catch {
-            return false;
-          }
-        },
-        { timeout: 10_000 }
-      )
-      .toBe(true);
-    await expect(dialog).toBeVisible();
+    await searchTrigger.click();
+
+    try {
+      await expect(dialog).toBeVisible({ timeout: 3_000 });
+    } catch {
+      const afterClickState = await page.evaluate(collectSearchDiagnostics);
+      const diagnostics = {
+        beforeClickState,
+        afterClickState,
+        consoleErrors,
+        pageErrors
+      };
+
+      await testInfo.attach("global-search-diagnostics", {
+        body: JSON.stringify(diagnostics, null, 2),
+        contentType: "application/json"
+      });
+
+      throw new Error(
+        `Global search dialog did not open after clicking the visible trigger. Diagnostics: ${JSON.stringify(diagnostics)}`
+      );
+    }
 
     const input = dialog.getByLabel("Global search input");
     await expect(input).toBeVisible();
