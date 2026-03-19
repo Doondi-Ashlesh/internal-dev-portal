@@ -16,9 +16,22 @@ test.describe("authenticated smoke flows", () => {
     await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
     const searchTrigger = page.locator("button.search-trigger");
     await expect(searchTrigger).toBeVisible();
-    await searchTrigger.click();
+    await expect(searchTrigger).toBeEnabled();
 
     const dialog = page.getByRole("dialog", { name: "Global search" });
+    await expect
+      .poll(
+        async () => {
+          try {
+            await searchTrigger.click();
+            return await dialog.isVisible();
+          } catch {
+            return false;
+          }
+        },
+        { timeout: 10_000 }
+      )
+      .toBe(true);
     await expect(dialog).toBeVisible();
 
     const input = dialog.getByLabel("Global search input");
