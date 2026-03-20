@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useRef, useState, startTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { BookOpenText, CornerDownLeft, Layers3, Search, ShieldCheck, Sparkles } from "lucide-react";
 
@@ -16,9 +17,9 @@ const emptyResults: SearchResultsPayload = {
 };
 
 const sectionMeta = {
-  shortcuts: { label: "Shortcuts", icon: Sparkles },
+  shortcuts: { label: "Pages", icon: Sparkles },
   services: { label: "Services", icon: Layers3 },
-  documents: { label: "Docs and Runbooks", icon: BookOpenText },
+  documents: { label: "Docs & runbooks", icon: BookOpenText },
   teams: { label: "Teams", icon: ShieldCheck }
 } as const;
 
@@ -31,6 +32,7 @@ function isEditableTarget(target: EventTarget | null) {
 export function GlobalSearch() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultsPayload>(emptyResults);
@@ -66,6 +68,10 @@ export function GlobalSearch() {
   }
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     function handleGlobalKeydown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -95,6 +101,7 @@ export function GlobalSearch() {
     }
 
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     const frame = requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -102,6 +109,7 @@ export function GlobalSearch() {
 
     return () => {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
       cancelAnimationFrame(frame);
     };
   }, [open]);
@@ -181,6 +189,84 @@ export function GlobalSearch() {
 
   let flatIndex = -1;
 
+  const overlay =
+    open && mounted ? (
+      <div className="search-overlay search-overlay-root" role="dialog" aria-modal="true" aria-label="Global search">
+        <button type="button" className="search-backdrop" aria-label="Close search" onClick={closeSearch} />
+        <div className="search-dialog-panel">
+          <div className="search-input-shell">
+            <Search size={18} className="muted" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={onInputKeyDown}
+              placeholder="Services, docs, teams, pages…"
+              aria-label="Global search input"
+            />
+            <span className="search-shortcut">Esc</span>
+          </div>
+
+          <div className="search-panel-meta">
+            <span className="muted tiny">
+              {loading ? "Searching…" : results.total ? `${results.total} results` : "No results"}
+            </span>
+            <span className="muted tiny">↑↓ navigate · ↵ open</span>
+          </div>
+
+          <div className="search-results">
+            {sections.length ? (
+              sections.map((section) => {
+                const Icon = section.icon;
+
+                return (
+                  <section key={section.key} className="search-section stack">
+                    <div className="row" style={{ justifyContent: "flex-start" }}>
+                      <Icon size={16} className="muted" />
+                      <span className="section-label">{section.label}</span>
+                    </div>
+                    <div className="stack">
+                      {section.items.map((item) => {
+                        flatIndex += 1;
+                        const currentIndex = flatIndex;
+                        const isActive = currentIndex === activeIndex;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="search-result"
+                            data-active={isActive}
+                            onMouseEnter={() => setActiveIndex(currentIndex)}
+                            onClick={() => navigateToResult(item)}
+                          >
+                            <div className="stack" style={{ gap: 6 }}>
+                              <div className="row">
+                                <strong>{item.title}</strong>
+                                {item.badge ? <span className="pill">{item.badge}</span> : null}
+                              </div>
+                              <span className="muted tiny search-result-copy">{item.description}</span>
+                              {item.meta ? <span className="muted tiny">{item.meta}</span> : null}
+                            </div>
+                            <CornerDownLeft size={14} className="muted" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })
+            ) : (
+              <div className="search-empty stack">
+                <strong>No matches</strong>
+                <span className="muted tiny">Try another term or open the catalog from the sidebar.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : null;
+
   return (
     <>
       <button
@@ -189,91 +275,13 @@ export function GlobalSearch() {
         onClick={openSearch}
         aria-haspopup="dialog"
         aria-expanded={open}
-        data-search-open={open ? "true" : "false"}
       >
         <Search size={18} className="muted" />
-        <span className="search-placeholder">Search services, docs, runbooks, owners...</span>
+        <span className="search-placeholder">Search catalog, docs, teams…</span>
         <span className="search-shortcut">Ctrl K</span>
       </button>
 
-      {open ? (
-        <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Global search">
-          <button type="button" className="search-backdrop" aria-label="Close search" onClick={closeSearch} />
-          <div className="search-dialog card">
-            <div className="search-input-shell">
-              <Search size={18} className="muted" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={onInputKeyDown}
-                placeholder="Search services, docs, runbooks, teams, and shortcuts..."
-                aria-label="Global search input"
-              />
-              <span className="search-shortcut">Esc</span>
-            </div>
-
-            <div className="search-panel-meta">
-              <span className="muted tiny">
-                {loading ? "Searching workspace..." : results.total ? `${results.total} results` : "No matching results"}
-              </span>
-              <span className="muted tiny">Use arrow keys and enter to navigate</span>
-            </div>
-
-            <div className="search-results">
-              {sections.length ? (
-                sections.map((section) => {
-                  const Icon = section.icon;
-
-                  return (
-                    <section key={section.key} className="search-section stack">
-                      <div className="row" style={{ justifyContent: "flex-start" }}>
-                        <Icon size={16} className="muted" />
-                        <span className="section-label">{section.label}</span>
-                      </div>
-                      <div className="stack">
-                        {section.items.map((item) => {
-                          flatIndex += 1;
-                          const currentIndex = flatIndex;
-                          const isActive = currentIndex === activeIndex;
-
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              className="search-result"
-                              data-active={isActive}
-                              onMouseEnter={() => setActiveIndex(currentIndex)}
-                              onClick={() => navigateToResult(item)}
-                            >
-                              <div className="stack" style={{ gap: 6 }}>
-                                <div className="row">
-                                  <strong>{item.title}</strong>
-                                  {item.badge ? <span className="pill">{item.badge}</span> : null}
-                                </div>
-                                <span className="muted tiny search-result-copy">{item.description}</span>
-                                {item.meta ? <span className="muted tiny">{item.meta}</span> : null}
-                              </div>
-                              <CornerDownLeft size={14} className="muted" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  );
-                })
-              ) : (
-                <div className="search-empty stack">
-                  <strong>No matching results</strong>
-                  <span className="muted tiny">
-                    Try a service name, an owner, a runbook title, or jump to a product area from the shortcuts list.
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {overlay && mounted ? createPortal(overlay, document.body) : null}
     </>
   );
 }

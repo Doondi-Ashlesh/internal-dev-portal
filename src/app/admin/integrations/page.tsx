@@ -20,19 +20,19 @@ export default async function IntegrationsPage() {
 
   const integrationCards = [
     {
-      title: "GitHub OAuth",
-      status: hasGithubAccess ? "Live" : "Needs sign-in",
-      description: "Use GitHub for login, repository import, and workspace-scoped repository sync."
+      title: "GitHub (OAuth)",
+      status: hasGithubAccess ? "Connected" : "Sign in with GitHub",
+      description: "Login, import repos, and link them to services in this workspace."
     },
     {
-      title: "Webhook ingestion",
-      status: webhookConfigured ? "Live" : "Needs secret",
-      description: "Signed GitHub push, release, and workflow events are verified, stored, and normalized into activity."
+      title: "Webhooks",
+      status: webhookConfigured ? "Ready" : "Set GITHUB_WEBHOOK_SECRET",
+      description: "Verify signed delivery payloads and show them in Activity."
     },
     {
-      title: "RBAC + audit",
-      status: "Live",
-      description: "Workspace mutations are permission-checked and written to an audit trail."
+      title: "RBAC & audit",
+      status: "On",
+      description: "Server actions check workspace role; changes are audit-logged."
     }
   ];
 
@@ -48,33 +48,32 @@ export default async function IntegrationsPage() {
             <div className="stack-lg hero-copy" style={{ position: "relative", zIndex: 1 }}>
               <div>
                 <div className="section-label">Admin</div>
-                <h1 className="page-title" style={{ fontSize: "2.5rem" }}>Integrations</h1>
+                <h1 className="page-title" style={{ fontSize: "2.5rem" }}>GitHub &amp; webhooks</h1>
                 <p className="muted" style={{ maxWidth: 720 }}>
-                  This area covers OAuth, signed webhook ingestion, repository sync, and the operational plumbing that turns
-                  the portal into a living engineering surface.
+                  Connect GitHub, import repositories, map them to services, and monitor webhook deliveries.
                 </p>
               </div>
               <div className="row" style={{ justifyContent: "flex-start" }}>
                 <span className="pill">{repositories.length} repositories</span>
                 <span className="pill">{deliveries.length} recent deliveries</span>
-                <span className="pill">Role-aware admin surface</span>
+                <span className="pill">RBAC enforced</span>
               </div>
             </div>
             <aside className="hero-sidebar">
               <article className="surface-panel stack">
-                <div className="section-label">Integration status</div>
+                <div className="section-label">Status</div>
                 <div className="compact-list">
                   <div className="compact-item">
-                    <strong>GitHub signed in</strong>
-                    <span className="tiny muted">{String(hasGithubAccess)}</span>
+                    <strong>GitHub token</strong>
+                    <span className="pill">{hasGithubAccess ? "Available" : "Missing — re-auth with GitHub"}</span>
                   </div>
                   <div className="compact-item">
-                    <strong>Webhook secret configured</strong>
-                    <span className="tiny muted">{String(webhookConfigured)}</span>
+                    <strong>Webhook secret</strong>
+                    <span className="pill">{webhookConfigured ? "Configured" : "Not set"}</span>
                   </div>
                   <div className="compact-item">
-                    <strong>Can manage</strong>
-                    <span className="tiny muted">{String(canManage)}</span>
+                    <strong>Your permissions</strong>
+                    <span className="pill">{canManage ? "Can manage integrations" : "View only"}</span>
                   </div>
                 </div>
               </article>

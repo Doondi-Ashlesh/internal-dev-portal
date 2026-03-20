@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, ChevronRight, LogOut, ShieldCheck } from "lucide-react";
+import { ChevronRight, LogOut, ShieldCheck } from "lucide-react";
 
 import { auth, signOut } from "@/auth";
 import { GlobalSearch } from "@/components/global-search";
@@ -39,27 +39,11 @@ export async function AppShell({
             <div className="brand-lockup">
               <div className="brand-mark">{workspaceInitials}</div>
               <div className="workspace-panel-copy">
-                <span className="section-label">Platform OS</span>
+                <span className="section-label">Workspace</span>
                 <h2 className="sidebar-title">{workspaceName}</h2>
                 <p className="muted tiny" style={{ margin: 0 }}>
-                  Catalog, docs, ownership, deploy links, and engineering context in one operating surface.
+                  Service catalog, docs, GitHub activity, and access in one place.
                 </p>
-              </div>
-            </div>
-
-            <div className="info-card workspace-panel stack">
-              <div className="row">
-                <span className="pill pill-strong">PostgreSQL-backed</span>
-                <span className="badge">
-                  <ShieldCheck size={14} />
-                  Audit-aware
-                </span>
-              </div>
-              <div className="workspace-panel-copy">
-                <strong>Engineering control plane</strong>
-                <span className="muted tiny">
-                  Service ownership, runbooks, activity, and repository context stay stitched together for daily ops.
-                </span>
               </div>
             </div>
 
@@ -70,25 +54,36 @@ export async function AppShell({
                 <span className="muted tiny">{userEmail}</span>
                 <span className="pill" style={{ display: "inline-flex", width: "fit-content" }}>{userRole}</span>
               </div>
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/login" });
-                }}
-              >
-                <button className="button-link secondary" type="submit">
-                  <LogOut size={14} />
-                  Sign out
-                </button>
-              </form>
+              <div className="stack" style={{ gap: 10 }}>
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/login" });
+                  }}
+                >
+                  <button className="button-link secondary" type="submit">
+                    <LogOut size={14} />
+                    Sign out
+                  </button>
+                </form>
+                <div className="sidebar-hint">
+                  <p className="muted tiny" style={{ margin: 0 }}>
+                    Signs you out of this portal only.
+                  </p>
+                  <p className="muted tiny" style={{ margin: 0 }}>
+                    To use a different GitHub user,{" "}
+                    <a href="/api/auth/github-web-session" className="sidebar-subtle-link">
+                      sign out of GitHub
+                    </a>{" "}
+                    first.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="nav-section stack">
               <div>
                 <div className="section-label">Navigate</div>
-                <p className="nav-caption tiny" style={{ margin: "8px 0 0" }}>
-                  Jump between the catalog, docs, activity, and platform administration.
-                </p>
               </div>
               <nav>
                 <ul className="nav-list">
@@ -112,39 +107,24 @@ export async function AppShell({
               </nav>
             </div>
 
-            <div className="info-card announcement-panel stack">
-              <div className="row">
-                <div>
-                  <div className="section-label">Ops Bulletin</div>
-                  <strong style={{ display: "block", marginTop: 8 }}>On-call refresh</strong>
-                </div>
-                <Bell size={18} className="strong" />
-              </div>
-              <p className="muted tiny" style={{ margin: 0 }}>
-                Platform handoff expectations were updated yesterday. Check the docs area for the new template.
-              </p>
-              <div className="row" style={{ justifyContent: "flex-start" }}>
-                <span className="pill">Runbooks current</span>
-                <span className="pill">Escalations aligned</span>
-              </div>
-            </div>
           </div>
         </aside>
 
         <main className="main-panel">
           <header className="card card-pad shell-toolbar">
-            <div className="toolbar-copy">
-              <div>
-                <div className="section-label">Workspace cockpit</div>
-                <h1 className="toolbar-title">Internal developer portal</h1>
+            <div className="toolbar-head">
+              <div className="toolbar-copy">
+                <div className="section-label">Developer portal</div>
+                <h1 className="toolbar-title">{workspaceName}</h1>
                 <p className="toolbar-caption muted">
-                  Search the catalog, inspect ownership, and move from docs to operational context without breaking the flow.
+                  Catalog, documentation, and engineering activity for your org.
                 </p>
               </div>
               <div className="toolbar-meta">
-                <span className="pill">GitHub sync ready</span>
-                <span className="pill">Role guards live</span>
-                <span className="pill">Audit trail active</span>
+                <span className="pill pill-strong">
+                  <ShieldCheck size={14} />
+                  {userRole}
+                </span>
               </div>
             </div>
             <GlobalSearch />

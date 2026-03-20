@@ -128,7 +128,9 @@ export default async function JoinInvitePage({ params }: { params: Promise<{ tok
                   This invite is for {invite.email}, but you are currently signed in as {invite.currentUserEmail ?? "an unknown account"}.
                 </span>
                 <div className="row" style={{ justifyContent: "flex-start" }}>
-                  <Link href="/login" className="button-link secondary">Go to login</Link>
+                  <a href="/api/auth/github-web-session" className="button-link secondary">
+                    Switch GitHub account
+                  </a>
                 </div>
               </article>
             ) : (

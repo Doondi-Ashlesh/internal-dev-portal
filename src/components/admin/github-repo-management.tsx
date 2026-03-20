@@ -71,16 +71,42 @@ export function GithubRepoManagement({
                 <div className="stack">
                   {repository.links.map((link) => (
                     <div key={`${repository.id}-${link.serviceId}`} className="info-card stack">
-                      <div className="row">
-                        <strong>{link.serviceName}</strong>
+                      <div className="row" style={{ alignItems: "flex-start" }}>
+                        <div>
+                          <strong>{link.serviceName}</strong>
+                          <div className="muted tiny" style={{ marginTop: 6 }}>
+                            How this repo maps to the service for webhooks and ownership context.
+                          </div>
+                        </div>
                         <span className="pill">{link.relationshipType}</span>
                       </div>
                       {canManage ? (
-                        <form action={deleteRepositoryLink}>
-                          <input type="hidden" name="repositoryId" value={repository.id} />
-                          <input type="hidden" name="serviceId" value={link.serviceId} />
-                          <button className="button-link secondary" type="submit">Remove link</button>
-                        </form>
+                        <div className="row" style={{ justifyContent: "flex-start", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+                          <form action={saveRepositoryLink} className="row" style={{ gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                            <input type="hidden" name="repositoryId" value={repository.id} />
+                            <input type="hidden" name="serviceId" value={link.serviceId} />
+                            <label className="field-stack" style={{ minWidth: 200 }}>
+                              <span className="field-label">Link type</span>
+                              <select name="relationshipType" defaultValue={link.relationshipType}>
+                                {relationshipOptions.map((relationship) => (
+                                  <option key={relationship} value={relationship}>
+                                    {relationship}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <button className="button-link" type="submit">
+                              Update link
+                            </button>
+                          </form>
+                          <form action={deleteRepositoryLink}>
+                            <input type="hidden" name="repositoryId" value={repository.id} />
+                            <input type="hidden" name="serviceId" value={link.serviceId} />
+                            <button className="button-link secondary" type="submit">
+                              Remove
+                            </button>
+                          </form>
+                        </div>
                       ) : null}
                     </div>
                   ))}

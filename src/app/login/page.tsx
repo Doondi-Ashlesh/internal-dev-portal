@@ -17,64 +17,92 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="shell">
-      <div className="container" style={{ padding: "48px 0" }}>
-        <section className="card card-pad" style={{ maxWidth: 720, margin: "0 auto" }}>
+    <main className="shell login-page">
+      <div className="container login-page-inner" style={{ padding: "48px 0" }}>
+        <section className="card card-pad login-card" style={{ maxWidth: 720, margin: "0 auto" }}>
           <div className="stack-lg">
-            <span className="pill">Authentication</span>
+            <span className="pill login-pill">Authentication</span>
             <div>
               <div className="eyebrow">Sign In</div>
-              <h1 className="page-title" style={{ fontSize: "2.5rem" }}>
+              <h1 className="page-title login-page-title" style={{ fontSize: "2.5rem" }}>
                 {demoAuthEnabled
                   ? "Connect GitHub or use demo access to enter the developer portal."
                   : "Connect GitHub to enter the developer portal."}
               </h1>
             </div>
-            <p className="muted">
-              GitHub sign-in is now membership-aware: users need an existing workspace role or an invite link before they can enter the portal.
-              {demoAuthEnabled ? " Demo access is enabled for local product development." : ""}
+            <p className="muted login-lead">
+              Members need workspace access or an invite.
+              {demoAuthEnabled ? " Demo access is available in this environment." : ""}
             </p>
 
             {identity && !access ? (
-              <article className="empty-state stack">
-                <strong>Signed in, but no workspace access yet</strong>
+              <article className="empty-state stack login-empty-state">
+                <strong>No workspace access yet</strong>
                 <span className="muted tiny">
-                  You are currently signed in as {identity.userEmail ?? identity.userName}. Ask for an invite link
-                  {demoAuthEnabled ? " or use demo access in local development." : "."}
+                  Signed in as {identity.userEmail ?? identity.userName}. Ask an admin for an invite
+                  {demoAuthEnabled ? " or use demo access below." : "."}
                 </span>
+                {githubReady ? (
+                  <p className="muted tiny login-hint-inline" style={{ margin: 0 }}>
+                    Wrong GitHub user?{" "}
+                    <a href="/api/auth/github-web-session" className="login-subtle-link">
+                      Switch GitHub account
+                    </a>
+                  </p>
+                ) : null}
               </article>
             ) : null}
 
-            <div className="panel-grid">
-              <article className="info-card stack">
+            <div className="panel-grid login-panel-grid">
+              <article className="info-card stack login-github-card">
                 <div className="row" style={{ justifyContent: "flex-start" }}>
-                  <Github size={18} className="strong" />
+                  <Github size={18} className="strong" aria-hidden />
                   <strong>GitHub sign in</strong>
                 </div>
                 <span className="muted tiny">
-                  {githubReady ? "Use your GitHub account if it already has workspace access or a matching invite." : "Add GitHub client credentials to .env to enable OAuth login."}
+                  {githubReady
+                    ? "Use an account that already has access or matches an invite."
+                    : "Add GitHub OAuth credentials in .env to enable sign-in."}
                 </span>
                 {githubReady ? (
-                  <form
-                    action={async () => {
-                      "use server";
-                      await signIn("github", { redirectTo: "/dashboard" });
-                    }}
-                  >
-                    <button className="button-link" type="submit">Continue with GitHub</button>
-                  </form>
+                  <div className="stack login-github-actions">
+                    <form
+                      action={async () => {
+                        "use server";
+                        await signIn("github", { redirectTo: "/dashboard" });
+                      }}
+                    >
+                      <button className="button-link login-cta-primary" type="submit">
+                        Continue with GitHub
+                      </button>
+                    </form>
+                    <aside className="login-hint" aria-label="Signing out">
+                      <p className="login-hint-text">
+                        Portal <strong>Sign out</strong> only ends this app&apos;s session. If the same GitHub user keeps
+                        appearing, end your GitHub browser session first.
+                      </p>
+                      <p className="login-hint-text" style={{ marginBottom: 0 }}>
+                        <a href="/api/auth/github-web-session" className="login-subtle-link">
+                          Open GitHub sign-out
+                        </a>{" "}
+                        — then return here and continue.
+                      </p>
+                    </aside>
+                  </div>
                 ) : (
-                  <span className="badge" data-tone="warning">GitHub OAuth is not configured yet</span>
+                  <span className="badge" data-tone="warning">
+                    GitHub OAuth is not configured yet
+                  </span>
                 )}
               </article>
 
               {demoAuthEnabled ? (
-                <article className="info-card stack">
+                <article className="info-card stack login-demo-card">
                   <div className="row" style={{ justifyContent: "flex-start" }}>
-                    <MonitorSmartphone size={18} className="strong" />
+                    <MonitorSmartphone size={18} className="strong" aria-hidden />
                     <strong>Demo access</strong>
                   </div>
-                  <span className="muted tiny">Creates a local owner session immediately for product development.</span>
+                  <span className="muted tiny">Local development: creates a demo owner session.</span>
                   <form
                     action={async () => {
                       "use server";
@@ -86,18 +114,22 @@ export default async function LoginPage() {
                     }}
                     className="stack"
                   >
-                    <button className="button-link secondary" type="submit">Enter demo workspace</button>
+                    <button className="button-link secondary login-cta-secondary" type="submit">
+                      Enter demo workspace
+                    </button>
                   </form>
                 </article>
               ) : null}
             </div>
 
-            <div className="row" style={{ justifyContent: "flex-start" }}>
-              <span className="badge">
-                <Shield size={14} />
-                Protected routes, RBAC checks, audit logging, and invite-based onboarding are enabled
+            <div className="login-footer">
+              <span className="badge login-security-badge">
+                <Shield size={14} aria-hidden />
+                RBAC, audit log, invite onboarding
               </span>
-              <Link href="/" className="button-link secondary">Back to landing</Link>
+              <Link href="/" className="button-link secondary login-back-link">
+                Back to landing
+              </Link>
             </div>
           </div>
         </section>

@@ -46,13 +46,22 @@ export async function searchWorkspace(query: string): Promise<SearchResultsPaylo
   const snapshot = await getWorkspaceSnapshot();
   const normalized = query.trim().toLowerCase();
 
+  const shortcutHints: Record<string, string> = {
+    "/dashboard": "Workspace overview and health",
+    "/catalog": "Services, ownership, and environments",
+    "/docs": "Runbooks, references, announcements",
+    "/activity": "GitHub and portal timeline",
+    "/admin/integrations": "Repos, links, webhook deliveries",
+    "/admin/members": "Roles, invites, teams"
+  };
+
   const shortcuts: SearchResultItem[] = appNavigation.slice(0, 6).map((item) => ({
     id: item.href,
     kind: "shortcut",
     title: item.label,
-    description: `Open ${item.label.toLowerCase()}.`,
+    description: shortcutHints[item.href] ?? `Open ${item.label}.`,
     href: item.href,
-    meta: "Shortcut",
+    meta: "Page",
     badge: "Go"
   }));
 

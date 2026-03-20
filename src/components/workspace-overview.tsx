@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, GitBranch, ShieldCheck, Siren, Sparkles } from "lucide-react";
+import { ArrowRight, Layers3 } from "lucide-react";
 
 import { DashboardMetrics, WorkspaceSummary } from "@/lib/types";
 
@@ -12,19 +12,19 @@ export function WorkspaceOverview({
 }) {
   const signalCards = [
     {
-      label: "Healthy coverage",
+      label: "Services healthy",
       value: `${metrics.healthy}/${metrics.services}`,
-      detail: "Services reporting healthy status"
+      detail: "Health signals in catalog"
     },
     {
-      label: "Docs indexed",
+      label: "Docs",
       value: String(metrics.docs),
-      detail: "Runbooks, docs, and announcements"
+      detail: "Runbooks & references"
     },
     {
-      label: "Workspace members",
+      label: "Members",
       value: String(workspace.memberCount),
-      detail: "People operating from one home"
+      detail: "Workspace access"
     }
   ];
 
@@ -34,40 +34,30 @@ export function WorkspaceOverview({
         <div className="stack-lg hero-copy" style={{ position: "relative", zIndex: 1 }}>
           <div className="row" style={{ justifyContent: "flex-start" }}>
             <span className="pill">{workspace.memberCount} members</span>
-            <span className="pill">GitHub sync ready</span>
-            <span className="pill">Role-based access</span>
+            <span className="pill">{metrics.services} services</span>
           </div>
           <div>
-            <div className="eyebrow">Engineering Home</div>
-            <h1 className="page-title">One place for service ownership, deploy links, docs, and what changed.</h1>
-            <p className="muted" style={{ maxWidth: 760, margin: "0 auto 0 0" }}>
-              This starter focuses on the core portal loop: catalog services, surface operational context, sync with GitHub,
-              and make docs plus activity easy to search.
+            <div className="eyebrow">Overview</div>
+            <h1 className="page-title">Your internal developer platform</h1>
+            <p className="muted" style={{ maxWidth: 640, margin: "0 auto 0 0" }}>
+              Live service catalog, ownership, documentation, and GitHub-backed activity—what most teams need before heavier
+              platform tooling.
             </p>
           </div>
-          <div className="row" style={{ justifyContent: "flex-start" }}>
+          <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
             <Link href="/catalog" className="button-link">
-              Explore catalog
+              Open catalog
               <ArrowRight size={16} />
             </Link>
-            <Link href="/admin/integrations" className="button-link secondary">Connect GitHub</Link>
-          </div>
-          <div className="row" style={{ justifyContent: "flex-start" }}>
-            <span className="badge" data-tone="success"><ShieldCheck size={14} />Centralized access</span>
-            <span className="badge"><GitBranch size={14} />Webhook-driven feed</span>
-            <span className="badge" data-tone="warning"><Siren size={14} />Runbook-ready incident context</span>
+            <Link href="/admin/integrations" className="button-link secondary">
+              GitHub &amp; webhooks
+            </Link>
           </div>
         </div>
 
-        <aside className="hero-sidebar" aria-label="Workspace posture">
+        <aside className="hero-sidebar" aria-label="Workspace snapshot">
           <article className="surface-panel stack">
-            <div className="row" style={{ alignItems: "flex-start" }}>
-              <div>
-                <div className="section-label">Portal posture</div>
-                <strong className="surface-title">Operational coverage</strong>
-              </div>
-              <span className="badge"><Sparkles size={14} />Live</span>
-            </div>
+            <div className="section-label">Snapshot</div>
             <div className="stat-grid stat-grid-compact">
               {signalCards.map((card) => (
                 <div key={card.label} className="stat-panel">
@@ -77,24 +67,12 @@ export function WorkspaceOverview({
                 </div>
               ))}
             </div>
-          </article>
-
-          <article className="surface-panel stack">
-            <div className="section-label">Operating pulse</div>
-            <div className="compact-list">
-              <div className="compact-item">
-                <strong>Catalog backbone</strong>
-                <span className="tiny muted">Services, docs, ownership, and activity tied together.</span>
-              </div>
-              <div className="compact-item">
-                <strong>Integration ready</strong>
-                <span className="tiny muted">GitHub auth, repo import, and webhook ingestion are active foundations.</span>
-              </div>
-              <div className="compact-item">
-                <strong>Search-first workflow</strong>
-                <span className="tiny muted">Command palette and service detail flows are ready for daily use.</span>
-              </div>
-            </div>
+            <p className="muted tiny" style={{ margin: "4px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
+              <Layers3 size={14} aria-hidden />
+              <span>
+                Press <strong>Ctrl K</strong> for global search.
+              </span>
+            </p>
           </article>
         </aside>
       </div>

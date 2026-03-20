@@ -6,13 +6,35 @@ test.describe("authenticated smoke flows", () => {
 
     await expect(page.getByText("Foundry Labs")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Fresh updates" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recent updates" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Billing API", exact: true })).toBeVisible();
   });
 
-  test.fixme("global search navigates to a seeded service detail page", async ({ page }) => {
-    // TODO: Re-enable after fixing the CI-only GlobalSearch interactivity bug.
-    // The trigger renders, but the React click handler does not activate in CI.
+  test("global search navigates to a seeded service detail page", async ({ page }) => {
+    await page.goto("/dashboard");
+
+    await expect(page.getByRole("heading", { name: "Operational hotspots" })).toBeVisible();
+
+    const searchTrigger = page.locator("button.search-trigger");
+    await expect(searchTrigger).toBeVisible();
+    await expect(searchTrigger).toBeEnabled();
+    await searchTrigger.click();
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "true");
+
+    const dialog = page.getByRole("dialog", { name: "Global search" });
+    await expect(dialog).toBeVisible();
+
+    const input = dialog.getByLabel("Global search input");
+    await expect(input).toBeVisible();
+    await input.fill("Billing API");
+
+    const result = page.locator(".search-result").filter({ hasText: "Billing API" }).first();
+    await expect(result).toBeVisible();
+    await result.click();
+
+    await expect(page).toHaveURL(/\/services\/billing-api$/);
+    await expect(page.getByRole("heading", { name: "Billing API" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open primary repository" })).toBeVisible();
   });
 
   test("catalog supports creating and deleting a temporary service", async ({ page }) => {

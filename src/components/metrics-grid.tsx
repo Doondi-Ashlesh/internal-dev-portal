@@ -5,34 +5,34 @@ import { DashboardMetrics } from "@/lib/types";
 export function MetricsGrid({ metrics }: { metrics: DashboardMetrics }) {
   const metricCards = [
     {
-      label: "Services",
+      label: "Catalog",
       value: metrics.services,
-      note: "Tracked in the portal",
-      emphasis: "Catalog coverage",
+      note: "Registered services",
+      emphasis: "In workspace",
       icon: Layers3,
       tone: undefined
     },
     {
       label: "Healthy",
       value: metrics.healthy,
-      note: "Current green services",
-      emphasis: "Operationally stable",
+      note: "Passing health checks",
+      emphasis: "Stable",
       icon: HeartPulse,
       tone: "success" as const
     },
     {
       label: "Degraded",
       value: metrics.degraded,
-      note: "Needs follow-up",
-      emphasis: metrics.degraded > 0 ? "Attention needed" : "No active watchlist",
+      note: "Needs attention",
+      emphasis: metrics.degraded > 0 ? "Review" : "None",
       icon: Activity,
       tone: metrics.degraded > 0 ? ("warning" as const) : undefined
     },
     {
       label: "Docs",
       value: metrics.docs,
-      note: "Runbooks and guides",
-      emphasis: "Knowledge indexed",
+      note: "Published docs",
+      emphasis: "Runbooks & refs",
       icon: BookOpen,
       tone: undefined
     }

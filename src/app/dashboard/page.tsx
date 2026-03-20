@@ -21,20 +21,20 @@ export default async function DashboardPage() {
         <section className="panel-grid">
           <div className="card card-pad stack-lg">
             <div className="section-copy">
-              <div className="section-label">Priority Services</div>
+              <div className="section-label">Services</div>
               <h2 className="section-title" style={{ marginTop: 8 }}>Operational hotspots</h2>
               <p className="muted tiny" style={{ maxWidth: 560 }}>
-                These services surface ownership, service health, repository coverage, and the most recent operational signal.
+                Ownership, tier, health, and repo context for each system your team runs.
               </p>
             </div>
             <ServiceCards services={snapshot.services} />
           </div>
           <div className="card card-pad stack-lg">
             <div className="section-copy">
-              <div className="section-label">Docs & Runbooks</div>
-              <h2 className="section-title" style={{ marginTop: 8 }}>Fresh updates</h2>
+              <div className="section-label">Documentation</div>
+              <h2 className="section-title" style={{ marginTop: 8 }}>Recent updates</h2>
               <p className="muted tiny" style={{ maxWidth: 520 }}>
-                Recently updated runbooks, reference docs, and internal announcements stay visible next to the services they support.
+                Latest runbooks and docs linked to your services.
               </p>
             </div>
             <DocsList documents={snapshot.documents} />
