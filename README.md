@@ -363,19 +363,3 @@ Permissions in the current build:
 - `npm run db:logs`
 - `npm run db:reset`
 
-## Known Gaps
-
-- The current Playwright suite is a smoke layer, not deep regression coverage.
-- Background jobs for recurring health checks and richer sync workflows are not built yet.
-- Hosted production deployment has not yet been validated end to end with live GitHub OAuth and live webhook deliveries.
-- Local Prisma migration commands are flaky on this Windows machine even though the committed migration SQL is valid and CI passes.
-
-## Next Recommended Work
-
-1. Deploy the app using the Render blueprint and verify the live URL.
-2. Update the GitHub OAuth app and webhook configuration to the hosted domain.
-3. Validate hosted sign-in, invite acceptance, repo import, and webhook ingestion.
-4. Add worker-based health polling and recurring sync jobs.
-5. Expand Playwright coverage for members, invitations, integrations, and document CRUD.
-6. Add a final consistency pass for empty, loading, and error states.
-7. Add richer failure-state coverage around GitHub webhook processing and repo sync.
