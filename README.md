@@ -1,6 +1,16 @@
 # Internal Dev Portal
-# images to be added
+
 A production-shaped internal developer portal for startups and growing engineering teams.
+
+## Screenshots
+
+### Landing page
+
+![Landing page](./landing-zoom1.png)
+
+### Sign in
+
+![Sign in](./login-zoom1.png)
 
 This app is positioned as a Backstage-lite platform that brings together:
 
