@@ -1,6 +1,6 @@
 # Internal Dev Portal
 
-A production-shaped internal developer portal for startups and growing engineering teams.
+An internal developer portal for fast-moving engineering teams. Brings service ownership, documentation, deploy context, and GitHub activity into one place — without the overhead of heavyweight platform tooling.
 
 ## Screenshots
 
@@ -32,137 +32,42 @@ A production-shaped internal developer portal for startups and growing engineeri
 
 ![Activity feed](./activity.png)
 
-This app is positioned as a Backstage-lite platform that brings together:
+## Features
 
-- service catalog and ownership
-- markdown docs and runbooks
-- environment and deploy links
-- GitHub auth and repository sync
-- webhook-driven engineering activity
-- workspace roles, invites, and audit logging
-
-## Current Status
-
-The project is in a strong working-v1 state and is ready to demo as a portfolio-quality SaaS.
-
-What is complete today:
-
-- authenticated app shell with protected routes
-- premium visual redesign across landing, shell, dashboard, catalog, service detail, docs, activity, and admin screens
-- services, teams, and markdown document CRUD
-- GitHub login plus local demo access
-- membership-aware access control with invite-based onboarding
-- repository import from GitHub and repo-to-service linking
-- signed GitHub webhook verification and normalized activity events
-- role-based mutation guards and audit logs
-- command-style global search with keyboard navigation
-- focused Vitest unit tests for permissions, env validation, invites, and webhook logic
-- Playwright smoke coverage for login, dashboard, catalog mutation, docs, and search-to-service navigation
-- CI, Docker packaging, Render blueprint support, and a deployment-friendly health route
-- PostgreSQL migration history and seeded demo data
-- safe hosted bootstrap flow that seeds demo data only when the database is empty
-
-What is still pending:
-
-- final consistency pass for empty, loading, and error states across the main product surfaces
-- background workers for recurring health checks and sync jobs
-- deeper E2E coverage beyond the current smoke suite
-- final hosted OAuth and webhook validation against a live public URL
-
-## What Makes This Showcase-Ready
-
-The current implementation is intentionally shaped like a real SaaS foundation rather than a static UI prototype:
-
-- Next.js App Router with protected routes
-- GitHub OAuth plus local demo access
-- Prisma-backed PostgreSQL data model with migration history
-- CRUD for services, teams, and markdown documents
-- many-to-many repository-to-service mapping
-- signed GitHub webhook verification and normalization
-- invite-based onboarding and membership-aware access
-- role-based authorization on server mutations
-- audit logging for administrative and catalog changes
-- activity feed that captures both manual and integration-driven events
-- real command-style global search with keyboard navigation
-- focused Vitest unit coverage plus Playwright browser smoke coverage
-- GitHub Actions CI, production build/start verification, Docker standalone packaging, and Render blueprint support
-- a cohesive UI system across both shell and inner product workflows
-
-## Verified
-
-The current build has been verified with:
-
-- `npm run prisma:generate`
-- `npm run prisma:seed`
-- `npm run prisma:seed:if-empty`
-- `npm run typecheck`
-- `npm run test`
-- `npm run build`
-- `npm run test:e2e`
-- `npm run start`
-
-Operational verification completed against PostgreSQL:
-
-- seed data loads successfully
-- `/api/health` returns `database: ok`
-- protected routes respond normally against the Postgres-backed app
-- invite links resolve correctly against the same runtime base URL used for webhook instructions
+- **Service catalog** — register services with ownership, environment links, and repository connections
+- **Docs and runbooks** — create and manage markdown documents scoped to your workspace
+- **Activity feed** — unified changelog driven by GitHub webhooks and manual entries
+- **GitHub integration** — OAuth sign-in, repository import, and signed webhook ingestion for push, release, and workflow events
+- **Workspace access control** — roles (`owner`, `admin`, `editor`, `viewer`), invite-based onboarding, and membership-aware login
+- **Audit logging** — server-side audit trail for catalog and administrative changes
+- **Global search** — command-style search with keyboard navigation across services, docs, and teams
+- **Health endpoint** — `/api/health` reports database connectivity and configuration status
+- **CI/CD ready** — GitHub Actions workflow, Docker standalone image, and Render blueprint included
 
 ## Tech Stack
 
-- Next.js 15
+- Next.js 15 (App Router)
 - TypeScript
-- NextAuth v5 beta
+- NextAuth v5
 - Prisma
 - PostgreSQL
 - Zod for server-side validation and env parsing
-- Vitest for focused unit tests
-- Playwright for browser smoke tests
-- Lucide icons and custom UI styles
+- Vitest for unit tests
+- Playwright for end-to-end tests
 - Docker Compose for local database orchestration
-
-## Feature Snapshot
-
-### Product surfaces
-
-- landing page
-- dashboard
-- service catalog
-- service detail pages
-- docs and runbooks
-- activity feed
-- integrations admin
-- members admin with invite management
-- public invite-acceptance flow
-
-### Platform capabilities
-
-- workspace roles: `owner`, `admin`, `editor`, `viewer`
-- workspace invites and membership-aware login
-- Prisma data layer
-- migration-backed schema management
-- audit logging
-- search API and keyboard-driven command palette
-- GitHub OAuth
-- GitHub repo import
-- GitHub webhook ingestion
-- health endpoint
-- CI workflow
-- Docker deployment path
-- Render blueprint for hosted deployment
 
 ## Local Setup
 
 1. Install dependencies.
 2. Copy `.env.example` to `.env`.
-3. Fill in the GitHub OAuth values if you want real GitHub login.
+3. Fill in your GitHub OAuth credentials.
 4. Start the local PostgreSQL container.
-5. Generate Prisma client.
+5. Generate the Prisma client.
 6. Apply migrations.
 7. Seed demo data.
 8. Start the app.
 
-```powershell
+```bash
 npm install
 npm run db:start
 npm run prisma:generate
@@ -173,16 +78,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-If you want to test the production build locally instead:
+To run the production build locally:
 
-```powershell
+```bash
 npm run build
 npm run start
 ```
 
-If you want to run the browser smoke suite locally:
+To run the browser test suite:
 
-```powershell
+```bash
 npm run test:e2e:install
 npm run test:e2e
 ```
@@ -194,7 +99,7 @@ npm run test:e2e
 - `GITHUB_CLIENT_ID`: GitHub OAuth app client ID
 - `GITHUB_CLIENT_SECRET`: GitHub OAuth app client secret
 - `GITHUB_WEBHOOK_SECRET`: shared secret used to verify signed GitHub webhooks
-- `NEXT_PUBLIC_APP_URL`: optional explicit base URL used for invite links and webhook configuration instructions
+- `NEXT_PUBLIC_APP_URL`: base URL used for invite links and webhook configuration instructions
 
 Runtime URL resolution order:
 
@@ -204,47 +109,39 @@ Runtime URL resolution order:
 4. `VERCEL_URL`
 5. `http://localhost:3000`
 
-The app validates runtime configuration at startup. In production mode, `AUTH_SECRET` is required, GitHub OAuth credentials must be provided as a complete pair, and `DATABASE_URL` must be a PostgreSQL connection string.
+In production mode, `AUTH_SECRET` is required, GitHub OAuth credentials must be provided as a complete pair, and `DATABASE_URL` must be a PostgreSQL connection string.
 
 ## Local PostgreSQL
 
 A local Postgres container is defined in `docker-compose.yml`.
 
-Useful commands:
-
-- `npm run db:start`
-- `npm run db:stop`
-- `npm run db:logs`
-- `npm run db:reset`
+```bash
+npm run db:start   # start the container
+npm run db:stop    # stop the container
+npm run db:logs    # stream logs
+npm run db:reset   # wipe and restart
+```
 
 Default local connection string:
 
-```text
+```
 postgresql://postgres:postgres@localhost:5432/internal_dev_portal?schema=public
 ```
 
 ## Prisma Migrations
 
-The migrations live under `prisma/migrations`.
+Migrations live under `prisma/migrations`. Apply them with:
 
-This project uses normal Prisma migration history in CI and on Linux-hosted deployment targets.
-
-Local note for this Windows machine:
-
-- Prisma's schema engine is still intermittently failing for `prisma migrate dev` and `prisma migrate deploy` even though the schema validates.
-- CI and hosted Linux environments should use the standard Prisma commands.
-- If the local migration engine fails again, use the committed SQL migrations as the source of truth.
+```bash
+npm run prisma:migrate:deploy
+```
 
 ## End-to-End Tests
 
-Playwright configuration lives in `playwright.config.ts` and the smoke tests live under `tests/e2e`.
+Playwright configuration is in `playwright.config.ts`. Tests live under `tests/e2e`.
 
-Current test files:
-
-- `tests/e2e/auth.setup.ts`
-- `tests/e2e/smoke.spec.ts`
-
-The smoke suite authenticates with demo access and exercises a small but meaningful slice of the real product workflow.
+- `tests/e2e/auth.setup.ts` — authenticates a demo workspace session
+- `tests/e2e/smoke.spec.ts` — exercises login, dashboard, catalog, docs, and search
 
 ## GitHub OAuth Setup
 
@@ -253,143 +150,117 @@ Create a GitHub OAuth App with:
 - Homepage URL: `http://localhost:3000`
 - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
 
-For a hosted deployment, change both values to your public app URL.
+For a hosted deployment, update both values to your public URL.
 
-GitHub sign-in is membership-aware in the current build:
+Sign-in is membership-aware:
 
-- existing workspace members can enter directly
-- invited users can sign in and then accept their invite from the join page
-- users without membership or a valid invite stay on `/login`
+- existing workspace members sign in directly
+- invited users sign in and accept their invite from the join page
+- users without membership or a valid invite remain on `/login`
 
 ## GitHub Webhook Setup
 
-After login, the Integrations page shows the webhook endpoint. Locally it will be:
+The webhook endpoint is shown on the Integrations page after login. Locally:
 
-```text
+```
 http://localhost:3000/api/webhooks/github
 ```
 
 Configure the webhook in GitHub with:
 
-- content type: `application/json`
-- secret: the same value as `GITHUB_WEBHOOK_SECRET`
-- events: `push`, `release`, and `workflow_run`
+- Content type: `application/json`
+- Secret: the value of `GITHUB_WEBHOOK_SECRET`
+- Events: `push`, `release`, `workflow_run`
 
-Supported normalized events today:
+Supported events:
 
 - `push`
-- `release` when published
-- `workflow_run` when completed
+- `release` (published)
+- `workflow_run` (completed)
 
-These deliveries are stored in the database and surfaced in the Integrations page.
+Deliveries are stored in the database and displayed on the Integrations page.
 
 ## Health and Operations
 
-A deployment-friendly health endpoint is available at:
-
-```text
-/api/health
+```
+GET /api/health
 ```
 
-It reports:
+Returns:
 
-- service availability
+- service status
 - database connectivity
 - runtime configuration status
-- whether GitHub OAuth and webhook secrets are configured
+- GitHub OAuth and webhook secret presence
 
 ## CI Pipeline
 
-A GitHub Actions workflow lives at `.github/workflows/ci.yml`.
+The GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and pull request:
 
-On every push and pull request it:
-
-1. provisions a PostgreSQL service container
-2. installs dependencies
-3. applies Prisma migrations and seeds demo data
-4. runs typecheck, unit tests, and production build
-5. installs Playwright Chromium
-6. runs the Playwright smoke suite
-7. builds the demo Docker image
+1. Provisions a PostgreSQL service container
+2. Installs dependencies
+3. Applies Prisma migrations and seeds data
+4. Runs typecheck, unit tests, and production build
+5. Installs Playwright Chromium and runs the smoke suite
+6. Builds the Docker image
 
 ## Hosted Deployment
 
-### Render blueprint
+### Render
 
-A Render blueprint is included at the repository root in `render.yaml`.
+A Render blueprint at `render.yaml` deploys a Node web service and a managed PostgreSQL database.
 
-It deploys:
+The blueprint:
 
-- a Node web service for `internal-dev-portal`
-- a managed PostgreSQL database
+- runs `prisma migrate deploy` before each deploy
+- runs `prisma:seed:if-empty` so the first deploy is seeded without overwriting later data
+- wires `DATABASE_URL` from the managed Postgres instance
+- auto-generates `AUTH_SECRET` and `GITHUB_WEBHOOK_SECRET`
+- uses `/api/health` as the health check
 
-The blueprint is configured to:
+Set `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in the Render dashboard, then update your GitHub OAuth app's callback URL to match the assigned public URL.
 
-- build from the `internal-dev-portal` subdirectory
-- run `prisma migrate deploy` before each deploy
-- run `prisma:seed:if-empty` so the first deploy gets demo data without wiping later data
-- populate `DATABASE_URL` from the managed Postgres instance
-- generate `AUTH_SECRET` and `GITHUB_WEBHOOK_SECRET`
-- use `/api/health` as the health check
+### Docker
 
-Before the hosted GitHub integration is fully live, you still need to fill in:
-
-- `GITHUB_CLIENT_ID`
-- `GITHUB_CLIENT_SECRET`
-
-After Render assigns the public URL, update your GitHub OAuth app callback URL and webhook settings to match that hosted domain.
-
-### Docker image + external PostgreSQL
-
-A multistage `Dockerfile` is included and Next.js is configured with `output: "standalone"`.
-
-```powershell
+```bash
 docker build -t internal-dev-portal .
-docker run -p 3000:3000 -e DATABASE_URL="postgresql://..." -e AUTH_SECRET="..." internal-dev-portal
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://..." \
+  -e AUTH_SECRET="..." \
+  internal-dev-portal
 ```
 
 ## Auth and Roles
 
-Workspace roles are enforced on the server:
+Roles are enforced server-side on all mutations:
 
-- `owner`
-- `admin`
-- `editor`
-- `viewer`
-
-Permissions in the current build:
-
-- owner/admin: member roles, invites, teams, integrations, repo links
-- editor and above: services and documents
-- viewer: read-only portal access
-
-## Demo Notes
-
-- Demo access creates a local owner session immediately.
-- Seed data includes example services, docs, audit logs, webhook deliveries, and a pending invite so the product feels alive on first run.
-- The seeded invite token is `demo-invite-token`.
-- Hosted bootstrap uses `prisma:seed:if-empty` so demo data appears on the first deployment without resetting later data.
+| Role | Access |
+|------|--------|
+| `owner` / `admin` | members, invites, teams, integrations, repository links |
+| `editor` | services and documents |
+| `viewer` | read-only access |
 
 ## Scripts
 
-- `npm run dev`
-- `npm run build`
-- `npm run start`
-- `npm run typecheck`
-- `npm run test`
-- `npm run test:coverage`
-- `npm run test:e2e`
-- `npm run test:e2e:headed`
-- `npm run test:e2e:debug`
-- `npm run test:e2e:install`
-- `npm run check`
-- `npm run prisma:generate`
-- `npm run prisma:migrate`
-- `npm run prisma:migrate:deploy`
-- `npm run prisma:seed`
-- `npm run prisma:seed:if-empty`
-- `npm run db:start`
-- `npm run db:stop`
-- `npm run db:logs`
-- `npm run db:reset`
-
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run typecheck` | TypeScript check |
+| `npm run test` | Unit tests |
+| `npm run test:coverage` | Unit tests with coverage |
+| `npm run test:e2e` | Playwright smoke suite |
+| `npm run test:e2e:headed` | Playwright with browser UI |
+| `npm run test:e2e:debug` | Playwright in debug mode |
+| `npm run test:e2e:install` | Install Playwright browsers |
+| `npm run check` | Typecheck + unit tests |
+| `npm run prisma:generate` | Generate Prisma client |
+| `npm run prisma:migrate` | Create and apply a migration |
+| `npm run prisma:migrate:deploy` | Apply migrations (production) |
+| `npm run prisma:seed` | Seed demo data |
+| `npm run prisma:seed:if-empty` | Seed only if database is empty |
+| `npm run db:start` | Start local Postgres container |
+| `npm run db:stop` | Stop local Postgres container |
+| `npm run db:logs` | Stream Postgres logs |
+| `npm run db:reset` | Wipe and restart Postgres |
