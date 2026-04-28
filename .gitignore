@@ -10,4 +10,6 @@ test-results
 playwright/.auth
 .dev-stdout.log
 .dev-stderr.log
+dev-server*.log
+scripts/screenshot-internal.js
 tsconfig.tsbuildinfo
