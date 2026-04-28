@@ -12,6 +12,26 @@ A production-shaped internal developer portal for startups and growing engineeri
 
 ![Sign in](./login-zoom1.png)
 
+### Dashboard
+
+![Dashboard](./dashboard.png)
+
+### Service catalog
+
+![Service catalog](./catalog.png)
+
+### Service detail
+
+![Service detail](./service-detail.png)
+
+### Docs and runbooks
+
+![Docs and runbooks](./docs.png)
+
+### Activity feed
+
+![Activity feed](./activity.png)
+
 This app is positioned as a Backstage-lite platform that brings together:
 
 - service catalog and ownership
